@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+
+<html lang="id"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_standard" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"on-primary-fixed":"#002114","surface-container-low":"#eff5f0","outline-variant":"#c0c9c2","inverse-surface":"#2c322f","tertiary":"#553400","on-primary-container":"#99d2b5","on-tertiary-fixed":"#2a1800","secondary-container":"#ffd4bd","primary-fixed":"#b5efd1","surface":"#f5fbf6","on-primary":"#ffffff","secondary-fixed":"#ffdbc8","on-error-container":"#93000a","secondary-fixed-dim":"#e7bea8","surface-dim":"#d5dbd6","primary":"#04442f","on-error":"#ffffff","on-tertiary-fixed-variant":"#643f00","on-tertiary":"#ffffff","background":"#f5fbf6","secondary":"#775845","on-background":"#171d1a","primary-container":"#245c45","outline":"#707973","tertiary-fixed":"#ffddb6","surface-container-highest":"#dee4df","surface-container":"#e9efea","on-secondary":"#ffffff","tertiary-fixed-dim":"#ffb959","on-surface-variant":"#404943","on-secondary-fixed":"#2c1608","on-primary-fixed-variant":"#16503a","error-container":"#ffdad6","inverse-on-surface":"#ecf2ed","on-secondary-container":"#795a48","surface-variant":"#dee4df","surface-container-high":"#e4eae5","on-tertiary-container":"#ffb857","primary-fixed-dim":"#99d3b6","surface-tint":"#316951","inverse-primary":"#99d3b6","on-surface":"#171d1a","error":"#ba1a1a","surface-bright":"#f5fbf6","tertiary-container":"#744900","on-secondary-fixed-variant":"#5d402f","surface-container-lowest":"#ffffff"},borderRadius:{DEFAULT:"0.25rem",lg:"0.5rem",xl:"0.75rem",full:"9999px"},spacing:{"margin-desktop":"3rem","space-xl":"2.5rem","space-lg":"1.5rem",gutter:"1.5rem",margin:"1.5rem","space-xs":"0.25rem","gutter-lg":"2rem","margin-mobile":"1rem","space-sm":"0.5rem","space-md":"1rem","gutter-sm":"1rem"},fontFamily:{"price-lg":["Plus Jakarta Sans"],"headline-xl-mobile":["Plus Jakarta Sans"],"body-sm":["Plus Jakarta Sans"],"headline-lg-mobile":["Plus Jakarta Sans"],"headline-sm":["Plus Jakarta Sans"],"headline-xl":["Plus Jakarta Sans"],"price-md":["Plus Jakarta Sans"],"headline-lg":["Plus Jakarta Sans"],"label-md":["Plus Jakarta Sans"],"body-md":["Plus Jakarta Sans"],"label-sm":["Plus Jakarta Sans"],"body-lg":["Plus Jakarta Sans"],"headline-md":["Plus Jakarta Sans"]},fontSize:{"price-lg":["22px",{lineHeight:"28px",letterSpacing:"-0.01em",fontWeight:"700"}],"headline-xl-mobile":["32px",{lineHeight:"40px",letterSpacing:"-0.02em",fontWeight:"700"}],"body-sm":["13px",{lineHeight:"20px",fontWeight:"400"}],"headline-lg-mobile":["26px",{lineHeight:"34px",letterSpacing:"-0.015em",fontWeight:"700"}],"headline-sm":["20px",{lineHeight:"28px",letterSpacing:"-0.01em",fontWeight:"600"}],"headline-xl":["48px",{lineHeight:"56px",letterSpacing:"-0.03em",fontWeight:"700"}],"price-md":["16px",{lineHeight:"22px",fontWeight:"700"}],"headline-lg":["36px",{lineHeight:"44px",letterSpacing:"-0.025em",fontWeight:"700"}],"label-md":["13px",{lineHeight:"18px",letterSpacing:"0.02em",fontWeight:"600"}],"body-md":["15px",{lineHeight:"24px",fontWeight:"400"}],"label-sm":["11px",{lineHeight:"14px",letterSpacing:"0.04em",fontWeight:"700"}],"body-lg":["18px",{lineHeight:"28px",fontWeight:"400"}],"headline-md":["24px",{lineHeight:"32px",letterSpacing:"-0.015em",fontWeight:"600"}]}}}};</script></head><body class="bg-surface font-body-md text-on-surface antialiased"><header class="fixed top-0 left-0 right-0 z-50 bg-surface/95 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="bg-primary-container text-on-primary font-label-sm text-label-sm py-space-xs px-margin-mobile md:px-margin-desktop"><div class="max-w-[1320px] mx-auto flex items-center justify-between"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-sm leading-none text-tertiary-fixed">local_shipping</span><span>Bebas Ongkir Seluruh Nusantara &amp; Garansi Fresh Roast</span></div><div class="hidden md:flex items-center gap-space-md"><span class="opacity-80">Roasting Terjadwal Setiap Pekan</span><span class="opacity-40">|</span><span class="opacity-80">Wholesale &amp; Retail B2B Hub</span></div></div></div><div class="h-20 max-w-[1320px] mx-auto px-margin-mobile md:px-margin-desktop flex items-center justify-between gap-gutter"><div class="flex items-center gap-space-lg shrink-0"><div class="flex items-center gap-space-sm"><img alt="Nusacommerce Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBOwMcnfMeT-MCaQexiN_UPHyUxIHXBHoZjTXemAg4bFlEusmVhgWZXBVAGnJXQ-brt0vCv8pdMYOPk364E5RXdRzifsm5MSn7MMPDRljgc8EnHKDerTVLFei9IJs9tYmum6R3ElOH09Tau_OZ13qE5oJ784UT_QjfbsevZeDoaDtSDElcb0uGEp2a9gndytLYDDkZ-K5dfik6xxCgf045trDOmnbeYAHT55LX1xs8"/><span class="font-headline-sm text-headline-sm font-bold tracking-tight text-primary">Nusacommerce</span></div></div><div class="hidden lg:flex flex-1 max-w-md mx-gutter"><div class="relative w-full flex items-center"><span class="material-symbols-outlined absolute left-space-md text-outline pointer-events-none text-xl leading-none">search</span><input class="w-full pl-11 pr-space-md py-space-sm bg-surface-container-lowest text-on-surface placeholder:text-outline font-body-sm text-body-sm rounded-lg border-0 shadow-[0_1px_4px_rgba(0,0,0,0.04)] focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all" placeholder="Cari biji kopi Arabika Gayo, Kintamani, alat seduh..." type="search"/></div></div><div class="flex items-center gap-space-md shrink-0"><button aria-label="Buka Pencarian" class="lg:hidden p-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-xl leading-none">search</span></button><button aria-label="Keranjang Belanja" class="relative p-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-2xl leading-none">shopping_bag</span><span class="mlm-cart-badge absolute -top-1 -right-1 bg-tertiary-container text-on-tertiary font-label-sm text-label-sm w-5 h-5 rounded-full flex items-center justify-center shadow-[0_1px_4px_rgba(0,0,0,0.15)]">3</span></button><div class="flex items-center gap-space-sm pl-space-xs"><img alt="Profile" class="w-8 h-8 rounded-full object-cover ring-2 ring-surface-container-high" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBzMDj4aOy6ytua4fE66j29pQMF7NTCM7g6oV6fpHz78y7ifJ0QXmrNRDMkyifcBswiiYQWT_Mmkvu2StFjMoliBHkHCWswLnnowUv__3LjVXDN8ACwkVvu_wmCzbW7hPuCLY7gZoxGSbrR59NB4PM1vRYa7cDDS_kklIh3LOG9PV5BfsOIAj3NhxcyoIFxgQF_w7tomJ0octLgQASnk0sZlQ4oUVUMNYcyXYGINug"/><span class="hidden sm:inline-block font-label-md text-label-md text-on-surface">Rian S.</span></div></div></div><nav class="hidden md:flex max-w-[1320px] mx-auto px-margin-mobile md:px-margin-desktop pb-space-sm gap-space-sm items-center" data-active-classes="bg-primary-container text-on-primary rounded-lg"><a class="font-label-md text-label-md px-space-md py-space-xs text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="beranda" href="#">Beranda</a><a aria-current="page" class="font-label-md px-space-md py-space-xs transition-colors bg-primary-container text-on-primary rounded-lg" data-path="katalog-kopi" href="#">Katalog Kopi</a><a class="font-label-md text-label-md px-space-md py-space-xs text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="kategori-daerah" href="#">Kategori Daerah</a><a class="font-label-md text-label-md px-space-md py-space-xs text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="promo-roastery" href="#">Promo Roastery</a><a class="font-label-md text-label-md px-space-md py-space-xs text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="cerita-kopi" href="#">Cerita Kopi</a></nav></header><main class="w-full pt-20 bg-surface min-h-[calc(100vh-80px)]"><div class="flex flex-col w-full">
+<!-- Top Breadcrumb & Micro-Bar -->
+<section class="w-full bg-surface-container-low">
+<div class="max-w-[1320px] mx-auto px-margin-mobile md:px-margin-desktop py-space-sm">
+<nav aria-label="breadcrumb" class="flex items-center flex-wrap gap-2 text-on-surface-variant font-label-md text-label-md">
+<a class="hover:text-primary transition-colors flex items-center gap-1" href="#">
+<span class="material-symbols-outlined text-base">home</span>
+<span>Beranda</span>
+</a>
+<span class="text-outline text-xs">&gt;</span>
+<a class="hover:text-primary transition-colors" href="#">Katalog Kopi</a>
+<span class="text-outline text-xs">&gt;</span>
+<a class="hover:text-primary transition-colors" href="#">Sumatera</a>
+<span class="text-outline text-xs">&gt;</span>
+<span class="text-primary font-bold truncate max-w-xs md:max-w-none">Arabika Gayo Full Washed Bener Meriah</span>
+</nav>
+</div>
+</section>
+<!-- Main Product Detail Showcase (2-Column Grid) -->
+<section class="max-w-[1320px] mx-auto px-margin-mobile md:px-margin-desktop py-space-lg w-full">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter-lg items-start">
+<!-- Left Column: Gallery & Visuals (Col 1-6) -->
+<div class="lg:col-span-6 flex flex-col gap-space-md">
+<!-- Main Stage Image (1:1 Ratio) -->
+<div class="relative w-full aspect-square bg-surface-container rounded-xl overflow-hidden shadow-sm flex items-center justify-center group">
+<img alt="Arabika Gayo Pantan Cuaca Kemasan Depan" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="High quality studio shot of a matte deep forest green specialty coffee valve pouch with gold foil degassing valve, warm minimalist typography label reading Nusacommerce Gayo Arabica, resting beside natural linen and scattered roasted coffee beans on a clean neutral travertine surface, soft natural side lighting." id="main-product-image" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBzHSRj1HRtJWqRf_lRgbtcdmIjIVM_qaZo8LUdOzTz2jCEjYWfdgQVl6FlDrp4TPvGhylT6yd6Dx9VvEN9d6QckAFKEWGcA2FJ6XAw98OpPEuIl5q1D1_fabV1RdFEDqn_iLDn8YjghNCFPhkP1ciEcgQEKybmkv-XM6Eogabv6SvCU3zmYlW0O0v5Jzd5Dia44zwyffyB78gtqSBM-28voCu-_yNbP2rRHxZH6hU"/>
+<!-- Badges on Image -->
+<div class="absolute top-4 left-4 flex flex-col gap-2 pointer-events-none">
+<span class="inline-flex items-center gap-1 px-3 py-1 bg-primary text-on-primary font-label-sm text-label-sm rounded-full shadow-sm">
+<span class="material-symbols-outlined text-sm">local_fire_department</span>
+<span>Fresh Roast: 3 Hari Lalu</span>
+</span>
+<span class="inline-flex items-center gap-1 px-3 py-1 bg-tertiary-fixed text-on-tertiary-fixed font-label-sm text-label-sm rounded-full shadow-sm">
+<span class="material-symbols-outlined text-sm">sell</span>
+<span>Promo 20% Off</span>
+</span>
+</div>
+<!-- Terroir Stamp Overlay -->
+<div class="absolute bottom-4 right-4 bg-surface/90 backdrop-blur-md px-3 py-1.5 rounded-lg flex items-center gap-2 shadow-sm pointer-events-none">
+<span class="material-symbols-outlined text-primary text-lg">filter_vintage</span>
+<span class="font-label-sm text-label-sm text-on-surface">Altitude: 1,550 mdpl • SCA 86.5</span>
+</div>
+</div>
+<!-- Thumbnail Gallery (4 Thumbnails) -->
+<div class="grid grid-cols-4 gap-gutter-sm">
+<button class="gallery-thumb active-thumb relative aspect-square rounded-lg overflow-hidden bg-surface-container-high transition-all shadow-sm focus:outline-none" onclick="switchGalleryImage(this, 'kemasan-depan')" type="button">
+<img alt="Kemasan Depan" class="w-full h-full object-cover" data-alt="Close-up front view of Nusacommerce specialty coffee pouch with pristine artisanal typography label and aroma valve." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCnH7wH4uIxy1URnRdMnsAO55C14TKhYlyppAgw-duWXw4mK5DPqs697wFB_uouwgxtEVCji6TKIus6NKEC2OLCtIjC-wknQ5rgPfP_RcS64YsncCcy1XZFPtmqNzA1kU7s9TCW7L-nsUWvoHT2Jjhn7OPzg1JWpxoAszBGQ8jTaX18t7sRtuO4w9fX0ltSKUB3VWT2o82WGRhgvXAEi3MdhW_omEEB-xMGlDEHcRY"/>
+<div class="thumb-indicator absolute inset-0 bg-primary/10 transition-opacity"></div>
+</button>
+<button class="gallery-thumb relative aspect-square rounded-lg overflow-hidden bg-surface-container-high opacity-70 hover:opacity-100 transition-all shadow-sm focus:outline-none" onclick="switchGalleryImage(this, 'biji-kopi')" type="button">
+<img alt="Biji Kopi Utuh Whole Bean" class="w-full h-full object-cover" data-alt="Macro detail shot of freshly roasted medium-light Arabica Gayo specialty whole coffee beans showing silky texture and aromatic oils." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDNkHPYWgvBswVPJHPrOckhShuibcqQuRheZWQs2LK4FlAkGtE2Z4Guuuj0dSqjzcxhR4Y1Oascwt80BAt3UkK_F6BPtwMfeAFw43FP7LJWzBlftvqYRps_GlZjAlnIMkD7jN5m9cVPoe5ZlL7ri3fPuoXOMfIXN0dA5q557WXonRFJWtnq3lHgIbk1NjmSQ7IFhO0pOin4oUGzoh4F_tcgOJtAtWWOeF7vgj2N0qU"/>
+<div class="thumb-indicator absolute inset-0 bg-primary/10 opacity-0 transition-opacity"></div>
+</button>
+<button class="gallery-thumb relative aspect-square rounded-lg overflow-hidden bg-surface-container-high opacity-70 hover:opacity-100 transition-all shadow-sm focus:outline-none" onclick="switchGalleryImage(this, 'bubuk-gilingan')" type="button">
+<img alt="Bubuk Gilingan Medium V60" class="w-full h-full object-cover" data-alt="Top down overhead shot of freshly ground specialty medium coarse coffee grounds ready for V60 pour over brewing, earthy tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAS2yXSCFo8IBQJmlW_rpvzavwcvmhC17BsyWjv4rgdNaHZnLIfAddrTiTUtJfGDVWo0SB9UdjoIaVBdbuROPVHj6jTEdyWATGZTk32xbLifWOf47xrztJrVunVPpUMArGsg2USfoFIl1Z27BSNeg72DgmwrHzNSAOqB0Y7hxFxidw42ePzoOOvj8CY8IZmdq-Vckciw49bA2Nc8mMeO7e6eow-vNEDhuS3aMl8qGk"/>
+<div class="thumb-indicator absolute inset-0 bg-primary/10 opacity-0 transition-opacity"></div>
+</button>
+<button class="gallery-thumb relative aspect-square rounded-lg overflow-hidden bg-surface-container-high opacity-70 hover:opacity-100 transition-all shadow-sm focus:outline-none" onclick="switchGalleryImage(this, 'kemasan-belakang')" type="button">
+<img alt="Kemasan Valve Pouch Belakang" class="w-full h-full object-cover" data-alt="Back panel view of the valve pouch showing SCA cupping flavor radar chart, harvest origin map of Takengon Aceh, and barcode details." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCy2bCbJshfMNgN817SFR8zF_TOS94T7VaPDBCQXhWSfLa8TLSRn6i6wkyBhPJmF-PES6FonPA3s6212UVx191d1slo83jH4Y7_1ZcUdcJ5Xk676yBsm1H_Fw9Fml3E033v2ctuTmUffkvrgEZIdNPjAFHrvaFtx3EpHyDGlQj5IHphS7I9IUOtJbpDpgEQD6_6-TuYWPaguK3tOpnbRmBkEB59cjHjoiCbjIdGuaQ"/>
+<div class="thumb-indicator absolute inset-0 bg-primary/10 opacity-0 transition-opacity"></div>
+</button>
+</div>
+<!-- Terroir Quick Highlight Ribbon -->
+<div class="bg-surface-container-low rounded-xl p-space-md flex items-center justify-between shadow-sm">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface flex items-center justify-center text-primary shadow-sm">
+<span class="material-symbols-outlined text-2xl">landscape</span>
+</div>
+<div>
+<div class="font-label-sm text-label-sm text-on-surface-variant uppercase">Single Origin Terroir</div>
+<div class="font-headline-sm text-headline-sm text-primary">Pantan Cuaca, Gayo</div>
+</div>
+</div>
+<div class="text-right">
+<div class="font-label-sm text-label-sm text-on-surface-variant uppercase">Metode Olah</div>
+<div class="font-headline-sm text-headline-sm text-secondary">Full Washed Double</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Product Details & Purchase Actions (Col 7-12) -->
+<div class="lg:col-span-6 flex flex-col gap-space-md">
+<!-- Category Pill & Micro-Badges -->
+<div class="flex flex-wrap items-center gap-space-xs">
+<span class="px-3 py-1 bg-surface-container-high text-primary font-label-sm text-label-sm rounded-full tracking-wide">
+            Single Origin Sumatera - Specialty Grade 1
+          </span>
+<span class="px-2.5 py-1 bg-surface-container text-on-surface-variant font-label-sm text-label-sm rounded-full">
+            Micro-Lot Harvest
+          </span>
+</div>
+<!-- Product Title (Only one H1) -->
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight leading-tight">
+          Arabika Gayo Pantan Cuaca Full Washed 250g
+        </h1>
+<!-- SKU, Rating & Sales Metrics -->
+<div class="flex flex-wrap items-center gap-space-md text-on-surface-variant font-body-sm text-body-sm py-1">
+<div class="flex items-center gap-1 text-tertiary">
+<span class="material-symbols-outlined text-lg leading-none" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-label-md text-label-md text-on-surface">4.9</span>
+<span class="text-on-surface-variant">(128 ulasan terverifikasi)</span>
+</div>
+<span class="text-surface-container-highest">|</span>
+<div>Terjual: <span class="font-label-md text-label-md text-on-surface">482 pax</span></div>
+<span class="text-surface-container-highest">|</span>
+<div class="text-outline">SKU: <span class="font-label-md text-label-md text-on-surface">NC-GY-250-WSH</span></div>
+</div>
+<!-- Tasting Notes Tags -->
+<div class="flex flex-col gap-1.5">
+<div class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">Karakter Rasa / Tasting Notes:</div>
+<div class="flex flex-wrap gap-2">
+<span class="px-3 py-1 bg-surface-container-low text-secondary font-label-md text-label-md rounded-full shadow-sm flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+              Peach
+            </span>
+<span class="px-3 py-1 bg-surface-container-low text-secondary font-label-md text-label-md rounded-full shadow-sm flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+              Black Tea
+            </span>
+<span class="px-3 py-1 bg-surface-container-low text-secondary font-label-md text-label-md rounded-full shadow-sm flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-secondary-container"></span>
+              Brown Sugar
+            </span>
+<span class="px-3 py-1 bg-surface-container-low text-primary font-label-md text-label-md rounded-full shadow-sm flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+              Citrus Clean Finish
+            </span>
+</div>
+</div>
+<!-- Price Block -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col gap-2">
+<div class="flex items-center gap-space-sm">
+<span class="text-outline line-through font-body-md text-body-md">Rp 115.000</span>
+<span class="px-2 py-0.5 bg-tertiary-fixed text-on-tertiary-fixed font-label-sm text-label-sm rounded font-bold">
+              Hemat 20%
+            </span>
+</div>
+<div class="flex items-baseline gap-space-sm">
+<span class="font-headline-xl text-headline-xl text-primary font-bold" id="display-price">Rp 92.000</span>
+<span class="text-on-surface-variant font-body-sm text-body-sm">/ pack kemasan valve pouch</span>
+</div>
+<div class="flex items-center gap-1.5 text-tertiary font-label-sm text-label-sm pt-1">
+<span class="material-symbols-outlined text-base">schedule</span>
+<span>Promo Roastery Ramadhan &amp; Musim Panen berlaku hingga 31 Maret 2025</span>
+</div>
+</div>
+<!-- Stock and Freshness Status Indicator -->
+<div class="flex flex-wrap items-center justify-between gap-space-sm bg-surface-container-low px-4 py-2.5 rounded-lg text-body-sm font-body-sm">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-primary animate-pulse"></span>
+<span class="text-on-surface">Stok Siap Kirim: <strong class="text-primary font-label-md text-label-md">34 pack</strong></span>
+</div>
+<div class="flex items-center gap-1.5 text-on-surface-variant">
+<span class="material-symbols-outlined text-base text-primary">event_available</span>
+<span>Sangrai Terjadwal: <strong class="text-on-surface">24 Okt 2024</strong></span>
+</div>
+</div>
+<!-- Interactive Variant Selectors -->
+<div class="space-y-space-md pt-2">
+<!-- Weight Selection -->
+<div class="space-y-1.5">
+<div class="flex justify-between items-center">
+<label class="font-label-md text-label-md text-on-surface">Ukuran Kemasan (Netto):</label>
+<span class="font-label-sm text-label-sm text-primary" id="selected-weight-label">250 Gram (Rekomendasi Pemula)</span>
+</div>
+<div class="grid grid-cols-3 gap-2" id="weight-selector-group">
+<button class="weight-btn active-opt py-2.5 px-3 rounded-lg font-label-md text-label-md text-center bg-primary text-on-primary transition-all shadow-sm focus:outline-none" onclick="selectWeight(this, 250, 92000, 115000)" type="button">
+                250g
+                <span class="block font-label-sm text-label-sm opacity-90 mt-0.5">Standar Pouch</span>
+</button>
+<button class="weight-btn py-2.5 px-3 rounded-lg font-label-md text-label-md text-center bg-surface-container text-on-surface hover:bg-surface-container-high transition-all shadow-sm focus:outline-none" onclick="selectWeight(this, 500, 175000, 218000)" type="button">
+                500g
+                <span class="block font-label-sm text-label-sm text-on-surface-variant mt-0.5">Lebih Hemat 5%</span>
+</button>
+<button class="weight-btn py-2.5 px-3 rounded-lg font-label-md text-label-md text-center bg-surface-container text-on-surface hover:bg-surface-container-high transition-all shadow-sm focus:outline-none" onclick="selectWeight(this, 1000, 335000, 418000)" type="button">
+                1000g / 1kg
+                <span class="block font-label-sm text-label-sm text-on-surface-variant mt-0.5">Wholesale Pack</span>
+</button>
+</div>
+</div>
+<!-- Grind Profile Selection -->
+<div class="space-y-1.5">
+<div class="flex justify-between items-center">
+<label class="font-label-md text-label-md text-on-surface">Pilihan Profil Gilingan (Grind Size):</label>
+<span class="font-label-sm text-label-sm text-primary" id="selected-grind-label">Biji Utuh (Tahan Segar &gt; 3 Bulan)</span>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-2" id="grind-selector-group">
+<button class="grind-btn active-opt p-2.5 rounded-lg text-left bg-primary text-on-primary transition-all shadow-sm focus:outline-none" onclick="selectGrind(this, 'Biji Utuh / Whole Bean', 'Tahan Segar &gt; 3 Bulan')" type="button">
+<span class="block font-label-md text-label-md">Biji Utuh</span>
+<span class="block font-label-sm text-label-sm opacity-90 text-xs">Whole Bean</span>
+</button>
+<button class="grind-btn p-2.5 rounded-lg text-left bg-surface-container text-on-surface hover:bg-surface-container-high transition-all shadow-sm focus:outline-none" onclick="selectGrind(this, 'Giling Kasar', 'Cocok untuk French Press &amp; Cold Brew')" type="button">
+<span class="block font-label-md text-label-md">Giling Kasar</span>
+<span class="block font-label-sm text-label-sm text-on-surface-variant text-xs">Cold Brew / Press</span>
+</button>
+<button class="grind-btn p-2.5 rounded-lg text-left bg-surface-container text-on-surface hover:bg-surface-container-high transition-all shadow-sm focus:outline-none" onclick="selectGrind(this, 'Giling Medium', 'Ideal untuk V60, Kalita, Aeropress')" type="button">
+<span class="block font-label-md text-label-md">Giling Medium</span>
+<span class="block font-label-sm text-label-sm text-on-surface-variant text-xs">V60 / Pour Over</span>
+</button>
+<button class="grind-btn p-2.5 rounded-lg text-left bg-surface-container text-on-surface hover:bg-surface-container-high transition-all shadow-sm focus:outline-none" onclick="selectGrind(this, 'Giling Halus', 'Untuk Espresso &amp; Seduh Kopi Tubruk')" type="button">
+<span class="block font-label-md text-label-md">Giling Halus</span>
+<span class="block font-label-sm text-label-sm text-on-surface-variant text-xs">Espresso / Tubruk</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Quantity Stepper & Subtotal Row -->
+<div class="flex items-center justify-between gap-gutter pt-3 bg-surface-container-lowest p-space-md rounded-xl shadow-sm">
+<div class="flex items-center gap-space-sm">
+<span class="font-label-md text-label-md text-on-surface">Jumlah:</span>
+<div class="flex items-center bg-surface-container rounded-lg p-1">
+<button aria-label="Kurangi Jumlah" class="w-8 h-8 rounded bg-surface hover:bg-surface-container-high flex items-center justify-center text-on-surface transition-colors font-bold text-lg leading-none" onclick="adjustQty(-1)" type="button">-</button>
+<input class="w-12 text-center bg-transparent font-headline-sm text-headline-sm text-primary font-bold focus:outline-none" id="qty-input" max="34" min="1" onchange="calculateSubtotal()" type="number" value="1"/>
+<button aria-label="Tambah Jumlah" class="w-8 h-8 rounded bg-surface hover:bg-surface-container-high flex items-center justify-center text-on-surface transition-colors font-bold text-lg leading-none" onclick="adjustQty(1)" type="button">+</button>
+</div>
+</div>
+<div class="text-right">
+<span class="font-body-sm text-body-sm text-on-surface-variant block">Subtotal Pesanan:</span>
+<span class="font-price-lg text-price-lg text-primary font-bold" id="subtotal-display">Rp 92.000</span>
+</div>
+</div>
+<!-- Conversion Action Buttons -->
+<div class="flex flex-col sm:flex-row gap-space-sm pt-2">
+<!-- Primary CTA: Tambah ke Keranjang -->
+<button class="flex-1 h-12 bg-primary text-on-primary font-label-md text-label-md rounded-lg flex items-center justify-center gap-2 hover:bg-primary-container transition-all shadow-md active:scale-[0.98]" onclick="addToCartAnimation()" type="button">
+<span class="material-symbols-outlined text-xl">shopping_bag</span>
+<span>Tambah ke Keranjang</span>
+</button>
+<!-- Secondary CTA: Beli Sekarang Langsung -->
+<button class="flex-1 h-12 bg-tertiary text-on-tertiary font-label-md text-label-md rounded-lg flex items-center justify-center gap-2 hover:bg-tertiary-container transition-all shadow-md active:scale-[0.98]" onclick="directBuy()" type="button">
+<span class="material-symbols-outlined text-xl">bolt</span>
+<span>Beli Sekarang Langsung</span>
+</button>
+<!-- Wishlist Button -->
+<button aria-label="Simpan ke Daftar Keinginan" class="h-12 w-12 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface flex items-center justify-center transition-all shadow-sm shrink-0" onclick="toggleWishlist(this)" type="button">
+<span class="material-symbols-outlined text-2xl transition-colors" id="wishlist-icon">favorite</span>
+</button>
+</div>
+<!-- Value Guarantees List -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-2 pt-2 text-on-surface-variant font-body-sm text-body-sm">
+<div class="flex items-center gap-2 bg-surface-container-low p-2.5 rounded-lg">
+<span class="material-symbols-outlined text-primary text-lg shrink-0">speed</span>
+<span class="leading-tight">Kirim hari ini jika order &lt; 15:00 WIB</span>
+</div>
+<div class="flex items-center gap-2 bg-surface-container-low p-2.5 rounded-lg">
+<span class="material-symbols-outlined text-primary text-lg shrink-0">air</span>
+<span class="leading-tight">Kemasan degassing nitrogen-flushed</span>
+</div>
+<div class="flex items-center gap-2 bg-surface-container-low p-2.5 rounded-lg">
+<span class="material-symbols-outlined text-primary text-lg shrink-0">published_with_changes</span>
+<span class="leading-tight">100% ganti baru jika valve/pouch cacat</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Below The Fold: Story, Cupping Recipe & Detailed Specifications -->
+<section class="w-full bg-surface-container-low py-space-xl mt-space-lg">
+<div class="max-w-[1320px] mx-auto px-margin-mobile md:px-margin-desktop">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter-lg items-start">
+<!-- Left: Editorial Story & Barista Brewing Recipe (Col 1-7) -->
+<div class="lg:col-span-7 space-y-space-lg">
+<!-- Deskripsi Produk -->
+<div class="bg-surface rounded-xl p-space-lg shadow-sm space-y-space-md">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-2xl">menu_book</span>
+<h2 class="font-headline-md text-headline-md text-on-surface">Kisah &amp; Karakter Pantan Cuaca</h2>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+              Berasal dari lereng vulkanik subur Kecamatan Pantan Cuaca di dataran tinggi Gayo, kopi ini dibudidayakan pada ketinggian ekstrem 1.550 meter di atas permukaan laut. Iklim mikro yang sejuk dengan kabut pegunungan alami memperlambat proses pematangan buah ceri kopi, menghasilkan akumulasi glukosa dan senyawa asam organik yang sangat kaya.
+            </p>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+              Melalui metode <em>Double Fermentation Fully Washed</em>, mucilage ceri terangkat dengan higienis tanpa fermentasi berlebih. Hasil seduhannya menghadirkan karakter kejernihan (cup clarity) memukau dengan dominasi aroma persik manis (peach), sentuhan elegan teh hitam (black tea), serta sensasi manis brown sugar yang diakhiri dengan semburat asam sitrun yang sangat bersih.
+            </p>
+<div class="bg-surface-container rounded-lg p-space-md flex flex-col md:flex-row items-center gap-space-md">
+<div class="w-full md:w-32 h-24 rounded-lg overflow-hidden shrink-0">
+<img alt="Petani Kopi Pantan Cuaca" class="w-full h-full object-cover" data-alt="Traditional Acehnese coffee farmer carefully sorting bright red ripe coffee cherries by hand on a wooden drying table in Takengon high hills." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCGgQVBLkhgJed7ENbAd69oqHLNoqOyu7bttxYG13qk_BKU77arr5ciTtjbkCc0gHYnpxFdn9xI0-IeZKOPYtKL_khr3Vu270civ9uYVnQVl90B_-hCdjJkHg0F3hUs7SegOsmLDsd_JQHStLANvZmPxgpKsFE5BJz0Eu9cDFZUfiIKtSY5e-lOjMqGImgtIhiu-q7Bk-bDLa92nMt9ntvJvqtWwA-XIGmR93wSQAk"/>
+</div>
+<div class="space-y-1">
+<div class="font-label-md text-label-md text-primary">Koperasi Mitra Tani Pantan Cuaca</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+                  Setiap pembelian mendukung langsung 38 keluarga petani mitra di Aceh Tengah melalui program perdagangan berkeadilan (fair price premium) sebesar 25% di atas standar pasar lokal.
+                </p>
+</div>
+</div>
+</div>
+<!-- Resep Seduh Rekomendasi Barista (Brewing Guide) -->
+<div class="bg-surface rounded-xl p-space-lg shadow-sm space-y-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-2xl">coffee_maker</span>
+<h2 class="font-headline-md text-headline-md text-on-surface">Panduan Seduh Barista (V60 Filter)</h2>
+</div>
+<span class="px-2.5 py-1 bg-surface-container-high text-primary font-label-sm text-label-sm rounded-full">Filter Profile</span>
+</div>
+<!-- Recipe Stats Grid -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-gutter-sm text-center">
+<div class="bg-surface-container-low p-space-sm rounded-lg">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase block">Dosis Kopi</span>
+<span class="font-headline-sm text-headline-sm text-primary font-bold">15 Gram</span>
+</div>
+<div class="bg-surface-container-low p-space-sm rounded-lg">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase block">Rasio Air</span>
+<span class="font-headline-sm text-headline-sm text-primary font-bold">1 : 15 (225ml)</span>
+</div>
+<div class="bg-surface-container-low p-space-sm rounded-lg">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase block">Suhu Air</span>
+<span class="font-headline-sm text-headline-sm text-primary font-bold">92°C - 93°C</span>
+</div>
+<div class="bg-surface-container-low p-space-sm rounded-lg">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase block">Waktu Ekstraksi</span>
+<span class="font-headline-sm text-headline-sm text-primary font-bold">2m 15s</span>
+</div>
+</div>
+<!-- Pour Step breakdown -->
+<div class="space-y-2 pt-2 font-body-sm text-body-sm text-on-surface-variant">
+<div class="flex items-start gap-3 bg-surface-container-lowest p-3 rounded-lg">
+<span class="w-6 h-6 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-xs shrink-0">1</span>
+<div><strong class="text-on-surface">Tahap Blooming (00:00 - 00:45):</strong> Tuangkan 45ml air melingkar rata untuk degassing karbon dioksida. Biarkan mengembang merata.</div>
+</div>
+<div class="flex items-start gap-3 bg-surface-container-lowest p-3 rounded-lg">
+<span class="w-6 h-6 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-xs shrink-0">2</span>
+<div><strong class="text-on-surface">Tuangan Kedua (00:45 - 01:20):</strong> Tuangkan spiral perlahan hingga timbangan mencapai 140ml untuk mengeluarkan sweetness buah persik.</div>
+</div>
+<div class="flex items-start gap-3 bg-surface-container-lowest p-3 rounded-lg">
+<span class="w-6 h-6 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-xs shrink-0">3</span>
+<div><strong class="text-on-surface">Tuangan Akhir (01:20 - 02:15):</strong> Selesaikan hingga total volume 225ml di tengah dripper untuk kestabilan body dan aftertaste teh hitam yang bersih.</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right: Spesifikasi Lengkap Structured Table Cards (Col 8-12) -->
+<div class="lg:col-span-5 space-y-space-md">
+<div class="bg-surface rounded-xl p-space-lg shadow-sm space-y-space-md">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-2xl">dataset</span>
+<h2 class="font-headline-md text-headline-md text-on-surface">Spesifikasi Lengkap</h2>
+</div>
+<!-- Key-Value Structured Cards -->
+<div class="space-y-2 font-body-sm text-body-sm">
+<div class="flex items-center justify-between p-3 bg-surface-container-lowest rounded-lg">
+<span class="text-on-surface-variant">Daerah Asal / Origin</span>
+<span class="font-label-md text-label-md text-on-surface text-right">Takengon, Aceh Tengah</span>
+</div>
+<div class="flex items-center justify-between p-3 bg-surface-container-lowest rounded-lg">
+<span class="text-on-surface-variant">Ketinggian Perkebunan</span>
+<span class="font-label-md text-label-md text-on-surface text-right">1.550 mdpl (Highland)</span>
+</div>
+<div class="flex items-center justify-between p-3 bg-surface-container-lowest rounded-lg">
+<span class="text-on-surface-variant">Varietas Kopi</span>
+<span class="font-label-md text-label-md text-on-surface text-right">Ateng Super, Tim-Tim</span>
+</div>
+<div class="flex items-center justify-between p-3 bg-surface-container-lowest rounded-lg">
+<span class="text-on-surface-variant">Proses Pascapanen</span>
+<span class="font-label-md text-label-md text-primary text-right font-bold">Fully Washed Double Ferment</span>
+</div>
+<div class="flex items-center justify-between p-3 bg-surface-container-lowest rounded-lg">
+<span class="text-on-surface-variant">Profil Sangrai (Roast)</span>
+<span class="font-label-md text-label-md text-on-surface text-right">Medium Light (Filter Profile)</span>
+</div>
+<div class="flex items-center justify-between p-3 bg-surface-container-lowest rounded-lg">
+<span class="text-on-surface-variant">Cupping Score Resmi</span>
+<span class="font-label-md text-label-md text-tertiary text-right font-bold">86.5 SCA Certified</span>
+</div>
+<div class="flex items-center justify-between p-3 bg-surface-container-lowest rounded-lg">
+<span class="text-on-surface-variant">Berat Bersih (Netto)</span>
+<span class="font-label-md text-label-md text-on-surface text-right">250 Gram</span>
+</div>
+<div class="flex items-center justify-between p-3 bg-surface-container-lowest rounded-lg">
+<span class="text-on-surface-variant">Berat Pengiriman (Bruto)</span>
+<span class="font-label-md text-label-md text-on-surface text-right">280 Gram (Termasuk Dus &amp; Valve)</span>
+</div>
+<div class="flex items-center justify-between p-3 bg-surface-container-lowest rounded-lg">
+<span class="text-on-surface-variant">Tipe Kemasan</span>
+<span class="font-label-md text-label-md text-on-surface text-right">Aluminium Foil Valve + Zipper</span>
+</div>
+</div>
+<!-- SCA Cupping Radar Representation (Inline SVG) -->
+<div class="pt-space-sm space-y-2">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant block">Radar Karakter Seduhan:</span>
+<div class="bg-surface-container p-4 rounded-xl flex items-center justify-center">
+<svg class="w-48 h-48 text-primary" viewbox="0 0 200 200">
+<!-- Radar Polygons -->
+<polygon fill="none" points="100,20 180,65 160,155 40,155 20,65" stroke="currentColor" stroke-opacity="0.15" stroke-width="1"></polygon>
+<polygon fill="none" points="100,45 155,75 140,135 60,135 45,75" stroke="currentColor" stroke-opacity="0.25" stroke-width="1"></polygon>
+<polygon fill="none" points="100,70 130,85 120,115 80,115 70,85" stroke="currentColor" stroke-opacity="0.35" stroke-width="1"></polygon>
+<!-- Data Filled Shape (Acidity, Body, Sweetness, Clarity, Aroma) -->
+<polygon fill="currentColor" fill-opacity="0.25" points="100,30 165,80 135,140 55,130 35,70" stroke="currentColor" stroke-width="2"></polygon>
+<!-- Axis Markers -->
+<circle cx="100" cy="30" fill="currentColor" r="3"></circle>
+<circle cx="165" cy="80" fill="currentColor" r="3"></circle>
+<circle cx="135" cy="140" fill="currentColor" r="3"></circle>
+<circle cx="55" cy="130" fill="currentColor" r="3"></circle>
+<circle cx="35" cy="70" fill="currentColor" r="3"></circle>
+<!-- Text Labels inside SVG -->
+<text fill="#171d1a" font-size="9" font-weight="600" text-anchor="middle" x="100" y="14">Aroma (8.7)</text>
+<text fill="#171d1a" font-size="9" font-weight="600" text-anchor="start" x="185" y="70">Acidity (8.8)</text>
+<text fill="#171d1a" font-size="9" font-weight="600" text-anchor="middle" x="145" y="168">Sweetness (8.6)</text>
+<text fill="#171d1a" font-size="9" font-weight="600" text-anchor="middle" x="50" y="168">Body (8.1)</text>
+<text fill="#171d1a" font-size="9" font-weight="600" text-anchor="end" x="12" y="70">Clarity (8.9)</text>
+</svg>
+</div>
+</div>
+<!-- Roastery Quality Assurance Note -->
+<div class="bg-primary/5 rounded-lg p-3 flex items-start gap-2.5">
+<span class="material-symbols-outlined text-primary text-xl shrink-0">verified</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+                Setiap batch di-roast menggunakan mesin Giesen W6A dengan kurva profil yang terverifikasi konsisten oleh Q-Grader bersertifikasi Specialty Coffee Association (SCA).
+              </p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Customer Reviews Section ("Ulasan Pembeli") -->
+<section class="max-w-[1320px] mx-auto px-margin-mobile md:px-margin-desktop py-space-xl w-full">
+<div class="space-y-space-lg">
+<!-- Header Review Block -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-space-md">
+<div>
+<div class="flex items-center gap-2 text-primary font-label-md text-label-md uppercase tracking-wider mb-1">
+<span class="material-symbols-outlined text-lg">star</span>
+<span>Umpan Balik Konsumen</span>
+</div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Ulasan Pembeli Terverifikasi (128)</h2>
+</div>
+<!-- Write Review Button -->
+<button class="h-10 px-4 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary font-label-md text-label-md transition-colors flex items-center gap-2 self-start md:self-auto shadow-sm" type="button">
+<span class="material-symbols-outlined text-lg">edit</span>
+<span>Tulis Ulasan Anda</span>
+</button>
+</div>
+<!-- Rating Breakdown Card -->
+<div class="bg-surface-container-low rounded-xl p-space-lg grid grid-cols-1 md:grid-cols-12 gap-gutter shadow-sm items-center">
+<!-- Big Number -->
+<div class="md:col-span-4 text-center md:text-left flex flex-col items-center md:items-start gap-1">
+<div class="font-headline-xl text-headline-xl text-primary font-extrabold flex items-baseline gap-2">
+<span>4.9</span>
+<span class="font-body-lg text-body-lg text-on-surface-variant font-normal">/ 5.0</span>
+</div>
+<div class="flex items-center gap-1 text-tertiary">
+<span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">98% pembeli merekomendasikan kopi ini untuk metode pour over.</p>
+</div>
+<!-- Rating Progress Bars -->
+<div class="md:col-span-8 space-y-2">
+<!-- 5 Star -->
+<div class="flex items-center gap-3 font-body-sm text-body-sm">
+<span class="w-12 text-on-surface font-label-md text-label-md">5 Bintang</span>
+<div class="flex-1 h-2.5 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 89%;"></div>
+</div>
+<span class="w-10 text-right text-on-surface-variant">114</span>
+</div>
+<!-- 4 Star -->
+<div class="flex items-center gap-3 font-body-sm text-body-sm">
+<span class="w-12 text-on-surface font-label-md text-label-md">4 Bintang</span>
+<div class="flex-1 h-2.5 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 9%;"></div>
+</div>
+<span class="w-10 text-right text-on-surface-variant">11</span>
+</div>
+<!-- 3 Star -->
+<div class="flex items-center gap-3 font-body-sm text-body-sm">
+<span class="w-12 text-on-surface font-label-md text-label-md">3 Bintang</span>
+<div class="flex-1 h-2.5 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 2%;"></div>
+</div>
+<span class="w-10 text-right text-on-surface-variant">3</span>
+</div>
+<!-- 2 & 1 Star -->
+<div class="flex items-center gap-3 font-body-sm text-body-sm">
+<span class="w-12 text-on-surface font-label-md text-label-md">1-2 Bintang</span>
+<div class="flex-1 h-2.5 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 0%;"></div>
+</div>
+<span class="w-10 text-right text-on-surface-variant">0</span>
+</div>
+</div>
+</div>
+<!-- Review Filter Chips -->
+<div class="flex flex-wrap items-center gap-2">
+<button class="px-4 py-1.5 rounded-full bg-primary text-on-primary font-label-md text-label-md shadow-sm" type="button">Semua (128)</button>
+<button class="px-4 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md transition-colors shadow-sm" type="button">Dengan Foto (42)</button>
+<button class="px-4 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md transition-colors shadow-sm" type="button">5 Bintang (114)</button>
+<button class="px-4 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md transition-colors shadow-sm" type="button">Metode: V60 Filter (86)</button>
+<button class="px-4 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md transition-colors shadow-sm" type="button">Metode: Espresso (18)</button>
+</div>
+<!-- Review Item Cards (3 Realistic Reviews) -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+<!-- Review 1 -->
+<div class="bg-surface rounded-xl p-space-md shadow-sm space-y-3 flex flex-col justify-between">
+<div class="space-y-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-9 h-9 rounded-full bg-surface-container-high flex items-center justify-center font-bold text-primary font-label-md text-label-md">
+                  FA
+                </div>
+<div>
+<h4 class="font-label-md text-label-md text-on-surface">Fahmi Ardiansyah</h4>
+<span class="font-label-sm text-label-sm text-primary flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">verified</span> Pembeli Terverifikasi
+                  </span>
+</div>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">2 hari lalu</span>
+</div>
+<div class="flex items-center gap-1 text-tertiary">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+<div class="flex flex-wrap gap-1.5">
+<span class="px-2 py-0.5 bg-surface-container-low text-primary font-label-sm text-label-sm rounded">Metode: V60 Filter</span>
+<span class="px-2 py-0.5 bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm rounded">Varian: Biji Utuh 250g</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+              "Karakter peach dan teh hitamnya keluar banget begitu diseduh suhu 92 derajat rasio 1:15. Sangrai fresh banget, valve pouch aromanya wangi semerbak saat dibuka. Kualitas specialty sejati!"
+            </p>
+</div>
+<div class="flex items-center gap-2 pt-2 text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-sm">thumb_up</span>
+<span>Membantu bagi 14 orang</span>
+</div>
+</div>
+<!-- Review 2 -->
+<div class="bg-surface rounded-xl p-space-md shadow-sm space-y-3 flex flex-col justify-between">
+<div class="space-y-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-9 h-9 rounded-full bg-surface-container-high flex items-center justify-center font-bold text-primary font-label-md text-label-md">
+                  DN
+                </div>
+<div>
+<h4 class="font-label-md text-label-md text-on-surface">Dewi Novitasari</h4>
+<span class="font-label-sm text-label-sm text-primary flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">verified</span> Pembeli Terverifikasi
+                  </span>
+</div>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">5 hari lalu</span>
+</div>
+<div class="flex items-center gap-1 text-tertiary">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+<div class="flex flex-wrap gap-1.5">
+<span class="px-2 py-0.5 bg-surface-container-low text-primary font-label-sm text-label-sm rounded">Metode: Aeropress</span>
+<span class="px-2 py-0.5 bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm rounded">Varian: Giling Medium 500g</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+              "Pesanan sampai di Jakarta Selatan dalam 24 jam dengan packaging double box super aman. Manis brown sugar-nya legit banget, ga asam berlebih di lambung. Langganan bulanan fixed."
+            </p>
+</div>
+<div class="flex items-center gap-2 pt-2 text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-sm">thumb_up</span>
+<span>Membantu bagi 9 orang</span>
+</div>
+</div>
+<!-- Review 3 -->
+<div class="bg-surface rounded-xl p-space-md shadow-sm space-y-3 flex flex-col justify-between">
+<div class="space-y-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-9 h-9 rounded-full bg-surface-container-high flex items-center justify-center font-bold text-primary font-label-md text-label-md">
+                  BP
+                </div>
+<div>
+<h4 class="font-label-md text-label-md text-on-surface">Bagas Pratama (Cafe Roaster)</h4>
+<span class="font-label-sm text-label-sm text-primary flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">verified</span> Pembeli Terverifikasi
+                  </span>
+</div>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">1 pekan lalu</span>
+</div>
+<div class="flex items-center gap-1 text-tertiary">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+<div class="flex flex-wrap gap-1.5">
+<span class="px-2 py-0.5 bg-surface-container-low text-primary font-label-sm text-label-sm rounded">Metode: Espresso &amp; Filter</span>
+<span class="px-2 py-0.5 bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm rounded">Varian: Biji Utuh 1kg</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+              "Ambil 1kg untuk guest beans di kedai saya. Pelanggan suka banget notes floral citrusnya yang crisp. Konsistensi roasting nusacommerce tidak pernah meleset dari profil SCA."
+            </p>
+</div>
+<div class="flex items-center gap-2 pt-2 text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-sm">thumb_up</span>
+<span>Membantu bagi 22 orang</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Related Products ("Rekomendasi Kopi Sejenis") -->
+<section class="w-full bg-surface-container-low py-space-xl">
+<div class="max-w-[1320px] mx-auto px-margin-mobile md:px-margin-desktop space-y-space-lg">
+<div class="flex items-center justify-between">
+<div>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-primary font-bold">Eksplorasi Daerah Lain</span>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Kopi Spesialti Terkait</h2>
+</div>
+<a class="hidden sm:flex items-center gap-1 text-primary font-label-md text-label-md hover:underline" href="#">
+<span>Lihat Semua Katalog</span>
+<span class="material-symbols-outlined text-base">arrow_forward</span>
+</a>
+</div>
+<!-- 4-Card Responsive Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter">
+<!-- Card 1: Bali Kintamani -->
+<div class="bg-surface rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col group">
+<div class="relative aspect-square bg-surface-container-high overflow-hidden">
+<img alt="Arabika Bali Kintamani Natural" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" data-alt="Modern craft coffee packaging for Bali Kintamani Natural process coffee featuring bright orange citrus tasting notes illustrations, high end editorial lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCOMLzH3NypTuQduGRFt2eqEmWuR9njLuBYEA_Yb5h1VA3C0-V6ETum7H4aR4LEPHnKi-N3PXkwNG2K70YVBujuPuCMKyTFK037dc68eQO7mQNbqFBAE16_VhPnluOFOgd5BMoXAvw_v21qEuEjYVak0P3PycQGG582EtPvGa5ndDbo8yBDcCSsHRa2xdOcWVMvJf3f_ld6R4rDk1DyyHzwrw8Fc47vimTEvqHbSTk"/>
+<span class="absolute top-3 left-3 px-2 py-0.5 bg-primary text-on-primary font-label-sm text-label-sm rounded-full shadow-sm">
+              Bali Natural
+            </span>
+</div>
+<div class="p-space-md flex flex-col flex-1 justify-between gap-3">
+<div class="space-y-1">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Single Origin Bali</span>
+<h3 class="font-headline-sm text-price-md text-on-surface group-hover:text-primary transition-colors">
+                Arabika Bali Kintamani Natural Anaerobic 250g
+              </h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Jeruk Manis, Ceri Merah, Cokelat</p>
+</div>
+<div class="flex items-center justify-between pt-2">
+<div>
+<span class="block font-label-sm text-label-sm text-outline line-through">Rp 120.000</span>
+<span class="font-price-lg text-price-lg text-primary font-bold">Rp 98.000</span>
+</div>
+<button aria-label="Tambah Kintamani ke Keranjang" class="w-10 h-10 rounded-lg bg-surface-container hover:bg-primary hover:text-on-primary text-primary flex items-center justify-center transition-colors shadow-sm" type="button">
+<span class="material-symbols-outlined text-xl">add_shopping_cart</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Card 2: Flores Bajawa -->
+<div class="bg-surface rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col group">
+<div class="relative aspect-square bg-surface-container-high overflow-hidden">
+<img alt="Arabika Flores Bajawa Washed" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" data-alt="Minimalist specialty coffee bag for Flores Bajawa fully washed coffee beans with warm hazelnut and chocolate artwork accents." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBDVTl_pWIbNLF0D5ApO8Zz1BegLlW3BmV5E0zYCL-d7dWmzbRhyeyp2R9d62tvaLAvfhHwp-QvkXdLc5JM7kokPgmv178DxagGv2v5-o1h_tu9oxLNVqN7Aw_IdwE0hZFspmERdP9KTV7MJKn8Ol32KU6pn2bdKJpVGEAiJ1UV_r75izkO8M3tdLfewgfAzTvFTpfPraLtRVXIiahzjUpj8c3_8h2s6Fx9cqbR9G8"/>
+<span class="absolute top-3 left-3 px-2 py-0.5 bg-secondary text-on-secondary font-label-sm text-label-sm rounded-full shadow-sm">
+              Nusa Tenggara
+            </span>
+</div>
+<div class="p-space-md flex flex-col flex-1 justify-between gap-3">
+<div class="space-y-1">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Single Origin Flores</span>
+<h3 class="font-headline-sm text-price-md text-on-surface group-hover:text-primary transition-colors">
+                Arabika Flores Bajawa Fully Washed 250g
+              </h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Hazelnut, Dark Cocoa, Vanila</p>
+</div>
+<div class="flex items-center justify-between pt-2">
+<div>
+<span class="block font-label-sm text-label-sm text-outline line-through">Rp 110.000</span>
+<span class="font-price-lg text-price-lg text-primary font-bold">Rp 88.000</span>
+</div>
+<button aria-label="Tambah Flores ke Keranjang" class="w-10 h-10 rounded-lg bg-surface-container hover:bg-primary hover:text-on-primary text-primary flex items-center justify-center transition-colors shadow-sm" type="button">
+<span class="material-symbols-outlined text-xl">add_shopping_cart</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Card 3: Toraja Sapan -->
+<div class="bg-surface rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col group">
+<div class="relative aspect-square bg-surface-container-high overflow-hidden">
+<img alt="Arabika Toraja Sapan Semi Washed" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" data-alt="Artisan single origin coffee pouch package representing Sulawesi Toraja Sapan high altitude coffee with herbal spicy notes." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAkgeJpNDJtDsjvfDTzjfOxmfZku-4SqmGDJbtyutKQE-hb8d5p5SU6ZPE6LLvkKejIM42j9yWHMqh8v9TXqrkyUwK0OPNYEs0teePNabVi4j-lXvh4_Yb4D9FixaqaIuKjkunLVL8igqL8e4rZSR89kMkaTSbt_E0OTLFsZhrrU-B4XCxII2TEF5-9iiXAo8f_UqG2u5K6S9qrmwth151EC8D9DKFvbE1DbpN97o4"/>
+<span class="absolute top-3 left-3 px-2 py-0.5 bg-primary text-on-primary font-label-sm text-label-sm rounded-full shadow-sm">
+              Sulawesi High-Altitude
+            </span>
+</div>
+<div class="p-space-md flex flex-col flex-1 justify-between gap-3">
+<div class="space-y-1">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Single Origin Sulawesi</span>
+<h3 class="font-headline-sm text-price-md text-on-surface group-hover:text-primary transition-colors">
+                Arabika Toraja Sapan Highland 250g
+              </h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Herbal Spicy, Ripe Plum, Caramelly</p>
+</div>
+<div class="flex items-center justify-between pt-2">
+<div>
+<span class="block font-label-sm text-label-sm text-outline line-through">Rp 125.000</span>
+<span class="font-price-lg text-price-lg text-primary font-bold">Rp 102.000</span>
+</div>
+<button aria-label="Tambah Toraja ke Keranjang" class="w-10 h-10 rounded-lg bg-surface-container hover:bg-primary hover:text-on-primary text-primary flex items-center justify-center transition-colors shadow-sm" type="button">
+<span class="material-symbols-outlined text-xl">add_shopping_cart</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Card 4: Mandheling Wet Hulled -->
+<div class="bg-surface rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col group">
+<div class="relative aspect-square bg-surface-container-high overflow-hidden">
+<img alt="Arabika Mandheling Wet Hulled" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" data-alt="Specialty coffee packaging bag of Sumatra Mandheling Giling Basah Wet Hulled coffee beans, rich earthy cedar packaging notes." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDY3oeyy3CZyV1-g5frEsgtIQBsXxNQfU9BGuR4FgqXs7DrFSxCnijUgoe2J0KDKhI3TpbuAo3pFbEjpyWEEEJONJ23E1Ecq2lizE0hENByrk1riZyB7kRGCdOcnGWvCXO0v_sqGpb3JqvAZgxD-_8XKyZbTRXiruzJ7sSz1wpDvXAduIO63tFNs1kcPyleIXkj_jgWJ4ucWvJhDSOu-M-t0zaO-vYIA7_0LG1PDEk"/>
+<span class="absolute top-3 left-3 px-2 py-0.5 bg-tertiary-fixed text-on-tertiary-fixed font-label-sm text-label-sm rounded-full shadow-sm">
+              Klasik Sumatera
+            </span>
+</div>
+<div class="p-space-md flex flex-col flex-1 justify-between gap-3">
+<div class="space-y-1">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Single Origin Mandheling</span>
+<h3 class="font-headline-sm text-price-md text-on-surface group-hover:text-primary transition-colors">
+                Arabika Mandheling Wet Hulled 250g
+              </h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Cedar Wood, Earthy Sweet, Dark Syrupy</p>
+</div>
+<div class="flex items-center justify-between pt-2">
+<div>
+<span class="block font-label-sm text-label-sm text-outline line-through">Rp 108.000</span>
+<span class="font-price-lg text-price-lg text-primary font-bold">Rp 86.000</span>
+</div>
+<button aria-label="Tambah Mandheling ke Keranjang" class="w-10 h-10 rounded-lg bg-surface-container hover:bg-primary hover:text-on-primary text-primary flex items-center justify-center transition-colors shadow-sm" type="button">
+<span class="material-symbols-outlined text-xl">add_shopping_cart</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Interactive JavaScript Micro-Interactions -->
+<script>
+    let currentUnitPrice = 92000;
+    let currentRegularPrice = 115000;
+    let currentQty = 1;
+    let selectedWeightVal = 250;
+    let selectedGrindVal = "Biji Utuh / Whole Bean";
+
+    function formatRupiah(number) {
+      return new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        maximumFractionDigits: 0
+      }).format(number);
+    }
+
+    function switchGalleryImage(btn, type) {
+      document.querySelectorAll('.gallery-thumb').forEach(thumb => {
+        thumb.classList.remove('active-thumb');
+        thumb.classList.add('opacity-70');
+        const ind = thumb.querySelector('.thumb-indicator');
+        if (ind) ind.classList.add('opacity-0');
+      });
+      btn.classList.add('active-thumb');
+      btn.classList.remove('opacity-70');
+      const curInd = btn.querySelector('.thumb-indicator');
+      if (curInd) curInd.classList.remove('opacity-0');
+
+      const mainImg = document.getElementById('main-product-image');
+      if (mainImg) {
+        mainImg.style.opacity = '0.6';
+        setTimeout(() => {
+          mainImg.style.opacity = '1';
+        }, 150);
+      }
+    }
+
+    function selectWeight(btn, weight, discountedPrice, regularPrice) {
+      selectedWeightVal = weight;
+      currentUnitPrice = discountedPrice;
+      currentRegularPrice = regularPrice;
+
+      // Update button styles
+      document.querySelectorAll('.weight-btn').forEach(b => {
+        b.classList.remove('bg-primary', 'text-on-primary');
+        b.classList.add('bg-surface-container', 'text-on-surface');
+      });
+      btn.classList.add('bg-primary', 'text-on-primary');
+      btn.classList.remove('bg-surface-container', 'text-on-surface');
+
+      // Update labels & prices
+      const weightLabel = document.getElementById('selected-weight-label');
+      if (weightLabel) {
+        weightLabel.textContent = weight >= 1000 ? '1 Kilogram (Wholesale Roastery Pack)' : weight + ' Gram';
+      }
+
+      const priceDisplay = document.getElementById('display-price');
+      if (priceDisplay) {
+        priceDisplay.textContent = formatRupiah(currentUnitPrice);
+      }
+
+      calculateSubtotal();
+    }
+
+    function selectGrind(btn, grindName, desc) {
+      selectedGrindVal = grindName;
+
+      document.querySelectorAll('.grind-btn').forEach(b => {
+        b.classList.remove('bg-primary', 'text-on-primary');
+        b.classList.add('bg-surface-container', 'text-on-surface');
+      });
+      btn.classList.add('bg-primary', 'text-on-primary');
+      btn.classList.remove('bg-surface-container', 'text-on-surface');
+
+      const grindLabel = document.getElementById('selected-grind-label');
+      if (grindLabel) {
+        grindLabel.textContent = `${grindName} (${desc})`;
+      }
+    }
+
+    function adjustQty(delta) {
+      const qtyInput = document.getElementById('qty-input');
+      let val = parseInt(qtyInput.value, 10) || 1;
+      val += delta;
+      if (val < 1) val = 1;
+      if (val > 34) val = 34;
+      qtyInput.value = val;
+      calculateSubtotal();
+    }
+
+    function calculateSubtotal() {
+      const qtyInput = document.getElementById('qty-input');
+      currentQty = parseInt(qtyInput.value, 10) || 1;
+      const subtotal = currentUnitPrice * currentQty;
+      const subtotalEl = document.getElementById('subtotal-display');
+      if (subtotalEl) {
+        subtotalEl.textContent = formatRupiah(subtotal);
+      }
+    }
+
+    function addToCartAnimation() {
+      const badges = document.querySelectorAll('.mlm-cart-badge');
+      badges.forEach(badge => {
+        let currentCount = parseInt(badge.textContent, 10) || 0;
+        currentCount += currentQty;
+        badge.textContent = currentCount;
+        badge.classList.add('scale-125');
+        setTimeout(() => badge.classList.remove('scale-125'), 300);
+      });
+
+      // Quick visual feedback on button
+      const notif = document.createElement('div');
+      notif.className = 'fixed bottom-6 right-6 z-50 bg-primary text-on-primary px-4 py-3 rounded-lg shadow-xl flex items-center gap-2 font-label-md text-label-md transition-all duration-300 transform translate-y-0';
+      notif.innerHTML = '<span class="material-symbols-outlined text-lg">check_circle</span> <span>' + currentQty + ' pack Arabika Gayo berhasil ditambahkan!</span>';
+      document.body.appendChild(notif);
+
+      setTimeout(() => {
+        notif.style.opacity = '0';
+        notif.style.transform = 'translateY(16px)';
+        setTimeout(() => notif.remove(), 400);
+      }, 3000);
+    }
+
+    function directBuy() {
+      addToCartAnimation();
+      setTimeout(() => {
+        window.location.hash = '#checkout';
+      }, 500);
+    }
+
+    function toggleWishlist(btn) {
+      const icon = btn.querySelector('#wishlist-icon');
+      if (!icon) return;
+      const isFilled = icon.style.fontVariationSettings?.includes("'FILL' 1");
+      if (isFilled) {
+        icon.style.fontVariationSettings = "'FILL' 0";
+        icon.classList.remove('text-error');
+      } else {
+        icon.style.fontVariationSettings = "'FILL' 1";
+        icon.classList.add('text-error');
+      }
+    }
+  </script>
+</div></main><footer class="w-full bg-surface-container-low text-on-surface mt-space-xl"><div class="bg-surface-container-high/60 py-space-lg px-margin-mobile md:px-margin-desktop"><div class="max-w-[1320px] mx-auto grid grid-cols-1 md:grid-cols-3 gap-gutter"><div class="flex items-center gap-space-md"><div class="w-12 h-12 rounded-lg bg-surface-container-lowest flex items-center justify-center text-primary shadow-[0_1px_4px_rgba(0,0,0,0.04)]"><span class="material-symbols-outlined text-2xl">verified</span></div><div><h4 class="font-headline-sm text-price-md text-on-surface">100% Kopi Murni Nusantara</h4><p class="font-body-sm text-body-sm text-on-surface-variant">Dipetik selektif dari perkebunan dataran tinggi terbaik.</p></div></div><div class="flex items-center gap-space-md"><div class="w-12 h-12 rounded-lg bg-surface-container-lowest flex items-center justify-center text-primary shadow-[0_1px_4px_rgba(0,0,0,0.04)]"><span class="material-symbols-outlined text-2xl">lock</span></div><div><h4 class="font-headline-sm text-price-md text-on-surface">Valve Pouch Kedap Udara</h4><p class="font-body-sm text-body-sm text-on-surface-variant">Menjaga kesegaran degassing dan profil aroma optimal.</p></div></div><div class="flex items-center gap-space-md"><div class="w-12 h-12 rounded-lg bg-surface-container-lowest flex items-center justify-center text-primary shadow-[0_1px_4px_rgba(0,0,0,0.04)]"><span class="material-symbols-outlined text-2xl">rocket_launch</span></div><div><h4 class="font-headline-sm text-price-md text-on-surface">Pengiriman Cepat Aman</h4><p class="font-body-sm text-body-sm text-on-surface-variant">Integrasi logistik terpercaya dengan tracking real-time.</p></div></div></div></div><div class="max-w-[1320px] mx-auto px-margin-mobile md:px-margin-desktop py-space-xl"><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-gutter-lg"><div class="lg:col-span-2 space-y-space-md"><div class="flex items-center gap-space-sm"><img alt="Nusacommerce Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBOwMcnfMeT-MCaQexiN_UPHyUxIHXBHoZjTXemAg4bFlEusmVhgWZXBVAGnJXQ-brt0vCv8pdMYOPk364E5RXdRzifsm5MSn7MMPDRljgc8EnHKDerTVLFei9IJs9tYmum6R3ElOH09Tau_OZ13qE5oJ784UT_QjfbsevZeDoaDtSDElcb0uGEp2a9gndytLYDDkZ-K5dfik6xxCgf045trDOmnbeYAHT55LX1xs8"/><span class="font-headline-sm text-headline-sm font-bold tracking-tight text-primary">Nusacommerce</span></div><p class="font-body-md text-body-md text-on-surface-variant max-w-sm">Kurasi specialty coffee dan single-origin micro-lot Indonesia. Menghubungkan jerih payah petani lokal langsung ke cangkir seduh Anda dengan transparansi penuh.</p><div class="flex items-center gap-space-sm pt-space-xs"><span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Roastery Terakreditasi SCA</span></div></div><div><h5 class="font-label-md text-label-md uppercase tracking-wider text-primary mb-space-md">Jelajah Daerah</h5><ul class="space-y-space-sm font-body-sm text-body-sm text-on-surface-variant"><li class="hover:text-primary transition-colors cursor-pointer">Sumatera (Gayo, Mandheling, Kerinci)</li><li class="hover:text-primary transition-colors cursor-pointer">Jawa (Ijen, Preanger, Temanggung)</li><li class="hover:text-primary transition-colors cursor-pointer">Bali &amp; Nusa Tenggara (Kintamani, Bajawa)</li><li class="hover:text-primary transition-colors cursor-pointer">Sulawesi (Toraja, Mamasa)</li><li class="hover:text-primary transition-colors cursor-pointer">Papua (Wamena, Moanemani)</li></ul></div><div><h5 class="font-label-md text-label-md uppercase tracking-wider text-primary mb-space-md">Layanan &amp; Mitra</h5><ul class="space-y-space-sm font-body-sm text-body-sm text-on-surface-variant"><li class="hover:text-primary transition-colors cursor-pointer">Program Roastery Wholesale</li><li class="hover:text-primary transition-colors cursor-pointer">Panduan Grind Profile</li><li class="hover:text-primary transition-colors cursor-pointer">Langganan Kopi Bulanan</li><li class="hover:text-primary transition-colors cursor-pointer">Pelacakan Paket Pengiriman</li><li class="hover:text-primary transition-colors cursor-pointer">FAQ &amp; Kebijakan Garansi</li></ul></div><div><h5 class="font-label-md text-label-md uppercase tracking-wider text-primary mb-space-md">Metode Pembayaran</h5><div class="flex flex-wrap gap-space-xs mb-space-md"><span class="px-space-sm py-space-xs bg-surface-container-lowest text-on-surface font-label-sm text-label-sm rounded">BCA</span><span class="px-space-sm py-space-xs bg-surface-container-lowest text-on-surface font-label-sm text-label-sm rounded">Mandiri</span><span class="px-space-sm py-space-xs bg-surface-container-lowest text-on-surface font-label-sm text-label-sm rounded">BRI</span><span class="px-space-sm py-space-xs bg-surface-container-lowest text-on-surface font-label-sm text-label-sm rounded">QRIS</span><span class="px-space-sm py-space-xs bg-surface-container-lowest text-on-surface font-label-sm text-label-sm rounded">GoPay</span></div><h5 class="font-label-md text-label-md uppercase tracking-wider text-primary mb-space-sm">Mitra Kurir</h5><div class="flex flex-wrap gap-space-xs"><span class="px-space-sm py-space-xs bg-surface-container-lowest text-on-surface font-label-sm text-label-sm rounded">JNE</span><span class="px-space-sm py-space-xs bg-surface-container-lowest text-on-surface font-label-sm text-label-sm rounded">SiCepat</span><span class="px-space-sm py-space-xs bg-surface-container-lowest text-on-surface font-label-sm text-label-sm rounded">J&amp;T</span><span class="px-space-sm py-space-xs bg-surface-container-lowest text-on-surface font-label-sm text-label-sm rounded">Paxel</span></div></div></div><div class="mt-space-xl pt-space-lg flex flex-col md:flex-row items-center justify-between gap-space-md font-body-sm text-body-sm text-on-surface-variant"><p>© 2025 Nusacommerce Specialty Coffee Roastery. Hak Cipta Dilindungi Undang-Undang.</p><div class="flex items-center gap-space-md"><span class="hover:text-primary transition-colors cursor-pointer">Syarat &amp; Ketentuan</span><span>•</span><span class="hover:text-primary transition-colors cursor-pointer">Kebijakan Privasi</span><span>•</span><span class="hover:text-primary transition-colors cursor-pointer">Etika Sumber Petani</span></div></div></div></footer></body></html>
