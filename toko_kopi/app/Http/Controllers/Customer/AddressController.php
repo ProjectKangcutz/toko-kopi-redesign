@@ -31,7 +31,7 @@ class AddressController extends Controller
 
         if ($request->expectsJson()) {
             return response()->json([
-                'addresses' => $addresses,
+                'addresses' => $this->addressService->serializeAddresses($addresses),
             ]);
         }
 
@@ -78,9 +78,12 @@ class AddressController extends Controller
         );
 
         if ($request->expectsJson()) {
+            $addresses = $this->addressService->listAddresses($customer);
+
             return response()->json([
                 'message' => 'Alamat baru berhasil ditambahkan.',
-                'address' => $address,
+                'address' => $this->addressService->serializeAddress($address),
+                'addresses' => $this->addressService->serializeAddresses($addresses),
             ], 201);
         }
 
@@ -95,7 +98,7 @@ class AddressController extends Controller
 
         if ($request->expectsJson()) {
             return response()->json([
-                'address' => $address,
+                'address' => $this->addressService->serializeAddress($address),
             ]);
         }
 
@@ -130,9 +133,12 @@ class AddressController extends Controller
         );
 
         if ($request->expectsJson()) {
+            $addresses = $this->addressService->listAddresses($customer);
+
             return response()->json([
                 'message' => 'Alamat berhasil diperbarui.',
-                'address' => $updatedAddress,
+                'address' => $this->addressService->serializeAddress($updatedAddress),
+                'addresses' => $this->addressService->serializeAddresses($addresses),
             ]);
         }
 
@@ -161,9 +167,12 @@ class AddressController extends Controller
         );
 
         if ($request->expectsJson()) {
+            $addresses = $this->addressService->listAddresses($customer);
+
             return response()->json([
                 'message' => 'Alamat utama berhasil diperbarui.',
-                'address' => $primaryAddress,
+                'address' => $this->addressService->serializeAddress($primaryAddress),
+                'addresses' => $this->addressService->serializeAddresses($addresses),
             ]);
         }
 
@@ -195,9 +204,15 @@ class AddressController extends Controller
         );
 
         if ($request->expectsJson()) {
+            $addresses = $this->addressService->listAddresses($customer);
+
             return response()->json([
                 'message' => 'Alamat berhasil dihapus.',
-                'promoted_primary_address' => $promotedAddress,
+                'deleted_address_id' => $deletedAddressId,
+                'promoted_primary_address' => $promotedAddress
+                    ? $this->addressService->serializeAddress($promotedAddress)
+                    : null,
+                'addresses' => $this->addressService->serializeAddresses($addresses),
             ]);
         }
 

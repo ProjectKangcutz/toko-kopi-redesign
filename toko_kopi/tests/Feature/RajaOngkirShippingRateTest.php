@@ -184,8 +184,8 @@ class RajaOngkirShippingRateTest extends TestCase
                     [
                         'name' => 'SiCepat Ekspres',
                         'code' => 'sicepat',
-                        'service' => 'BEST',
-                        'description' => 'Besok Sampai Tujuan',
+                        'service' => 'REG',
+                        'description' => 'Layanan Reguler',
                         'cost' => 28000,
                         'etd' => null,
                     ],
@@ -204,7 +204,7 @@ class RajaOngkirShippingRateTest extends TestCase
         $this->assertFalse($result['from_cache']);
         $this->assertCount(3, $result['rates']);
 
-        // Pastikan ETD kosong atau null dinormalisasi ke null dan field lengkap
+        // Pastikan ETD kosong atau null dinormalisasi ke null dan urut dari yang termurah
         $this->assertSame([
             'courier_code' => 'jnt',
             'courier_name' => 'J&T Express',
@@ -219,6 +219,7 @@ class RajaOngkirShippingRateTest extends TestCase
         $this->assertSame('2-3 day', $result['rates'][1]['etd']);
         $this->assertSame(19000, $result['rates'][1]['cost']);
         $this->assertSame('sicepat', $result['rates'][2]['courier_code']);
+        $this->assertSame('REG', $result['rates'][2]['service_code']);
         $this->assertNull($result['rates'][2]['etd']);
 
         Http::assertSent(function (Request $request) use ($secretKey): bool {
@@ -585,17 +586,17 @@ class RajaOngkirShippingRateTest extends TestCase
         $address = $this->createAddress($customer);
         $this->addProductToCustomerCart($customer, 500, 1);
 
-        // Nonaktifkan 'tiki' dan nonaktifkan layanan JNE 'OKE'
-        ShippingCourier::where('code', 'tiki')->update(['is_active' => false]);
+        // Nonaktifkan 'jnt' dan nonaktifkan layanan JNE 'YES' di master DB
+        ShippingCourier::where('code', 'jnt')->update(['is_active' => false]);
         $jne = ShippingCourier::where('code', 'jne')->firstOrFail();
-        ShippingService::where('courier_id', $jne->id)->where('service_code', 'OKE')->update(['is_active' => false]);
+        ShippingService::where('courier_id', $jne->id)->where('service_code', 'YES')->update(['is_active' => false]);
 
         Http::fake([
             'https://rajaongkir.komerce.id/api/v1/calculate/domestic-cost' => Http::response([
                 'meta' => ['code' => 200, 'status' => 'success'],
                 'data' => [
-                    ['name' => 'TIKI', 'code' => 'tiki', 'service' => 'REG', 'description' => 'Regular', 'cost' => 15000, 'etd' => '2'],
-                    ['name' => 'JNE Express', 'code' => 'jne', 'service' => 'OKE', 'description' => 'Ekonomis', 'cost' => 12000, 'etd' => '4-5'],
+                    ['name' => 'J&T Express', 'code' => 'jnt', 'service' => 'EZ', 'description' => 'Reguler', 'cost' => 15000, 'etd' => '2'],
+                    ['name' => 'JNE Express', 'code' => 'jne', 'service' => 'YES', 'description' => 'Yakin Esok Sampai', 'cost' => 24000, 'etd' => '1'],
                     ['name' => 'JNE Express', 'code' => 'jne', 'service' => 'REG', 'description' => 'Reguler', 'cost' => 18000, 'etd' => '2-3'],
                 ],
             ], 200),
@@ -605,12 +606,12 @@ class RajaOngkirShippingRateTest extends TestCase
         $service = app(ShippingRateService::class);
         $result = $service->calculateForCustomer($customer, $address);
 
-        $this->assertNotContains('tiki', $result['courier_codes']);
+        $this->assertNotContains('jnt', $result['courier_codes']);
         $this->assertCount(1, $result['rates']);
         $this->assertSame('jne', $result['rates'][0]['courier_code']);
         $this->assertSame('REG', $result['rates'][0]['service_code']);
 
-        Http::assertSent(static fn (Request $request): bool => ! str_contains((string) $request['courier'], 'tiki'));
+        Http::assertSent(static fn (Request $request): bool => ! str_contains((string) $request['courier'], 'jnt'));
     }
 
     public function test_server_uses_normal_cost_ignoring_cashback_and_does_not_trust_client_rate(): void
@@ -712,5 +713,86 @@ class RajaOngkirShippingRateTest extends TestCase
         $this->assertFalse($fourth['from_cache']);
         $this->assertSame(25000, $fourth['rates'][0]['cost']);
         Http::assertSentCount(3);
+    }
+
+    public function test_whitelist_filters_disallowed_services_hides_empty_couriers_deduplicates_and_sorts_cheapest_first(): void
+    {
+        $this->configureRajaOngkir();
+        $customer = $this->createCustomer();
+        $address = $this->createAddress($customer);
+        $this->addProductToCustomerCart($customer, 500, 1);
+
+        // Kosongkan layanan anteraja pada config agar kurir tersebut tidak diminta maupun tampil.
+        config(['shipping.whitelist.anteraja' => []]);
+
+        Http::fake([
+            'https://rajaongkir.komerce.id/api/v1/calculate/domestic-cost' => Http::response([
+                'meta' => ['code' => 200, 'status' => 'success'],
+                'data' => [
+                    ['name' => 'TIKI', 'code' => 'tiki', 'service' => 'REG', 'description' => 'Non-whitelist courier', 'cost' => 10000, 'etd' => '2'],
+                    ['name' => 'JNE Express', 'code' => 'jne', 'service' => 'OKE', 'description' => 'Non-whitelist service', 'cost' => 11000, 'etd' => '4-5'],
+                    ['name' => 'JNE Express', 'code' => 'jne', 'service' => 'YES', 'description' => 'Yakin Esok Sampai', 'cost' => 28000, 'etd' => '1'],
+                    ['name' => 'JNE Express', 'code' => 'jne', 'service' => 'REG', 'description' => 'Reguler Duplikat Mahal', 'cost' => 21000, 'etd' => '2-3'],
+                    ['name' => 'JNE Express', 'code' => 'jne', 'service' => 'REG', 'description' => 'Reguler', 'cost' => 19000, 'etd' => '2-3'],
+                    ['name' => 'SiCepat Ekspres', 'code' => 'sicepat', 'service' => 'BEST', 'description' => 'Non-whitelist service', 'cost' => 25000, 'etd' => '1'],
+                    ['name' => 'SiCepat Ekspres', 'code' => 'sicepat', 'service' => 'REG', 'description' => 'Reguler', 'cost' => 15000, 'etd' => '2-3'],
+                    ['name' => 'POS Indonesia', 'code' => 'pos', 'service' => 'Pos Nextday', 'description' => 'Non-whitelist service', 'cost' => 30000, 'etd' => '1'],
+                    ['name' => 'POS Indonesia', 'code' => 'pos', 'service' => 'Pos Reguler', 'description' => 'Pos Reguler', 'cost' => 16000, 'etd' => '3-4'],
+                    ['name' => 'J&T Express', 'code' => 'jnt', 'service' => 'EZ', 'description' => 'Reguler', 'cost' => 17000, 'etd' => '2-3'],
+                ],
+            ], 200),
+        ]);
+
+        /** @var ShippingRateService $service */
+        $service = app(ShippingRateService::class);
+        $result = $service->calculateForCustomer($customer, $address);
+
+        $this->assertNotContains('tiki', $result['courier_codes']);
+        $this->assertNotContains('anteraja', $result['courier_codes']);
+
+        $this->assertCount(5, $result['rates']);
+        $this->assertSame([
+            ['sicepat', 'REG', 15000],
+            ['pos', 'Pos Reguler', 16000],
+            ['jnt', 'EZ', 17000],
+            ['jne', 'REG', 19000],
+            ['jne', 'YES', 28000],
+        ], array_map(
+            static fn (array $r): array => [$r['courier_code'], $r['service_code'], $r['cost']],
+            $result['rates']
+        ));
+
+        Http::assertSent(static fn (Request $request): bool => ! str_contains((string) $request['courier'], 'tiki')
+            && ! str_contains((string) $request['courier'], 'anteraja'));
+    }
+
+    public function test_resolve_selected_rate_rejects_manipulated_non_whitelisted_courier_or_service(): void
+    {
+        $this->configureRajaOngkir();
+        $customer = $this->createCustomer();
+        $address = $this->createAddress($customer);
+        $this->addProductToCustomerCart($customer, 500, 1);
+
+        /** @var ShippingRateService $service */
+        $service = app(ShippingRateService::class);
+
+        $blockedPairs = [
+            ['jne', 'OKE'],
+            ['sicepat', 'BEST'],
+            ['pos', 'Pos Nextday'],
+            ['tiki', 'REG'],
+        ];
+
+        foreach ($blockedPairs as [$courier, $serviceCode]) {
+            try {
+                $service->resolveSelectedRate($customer, $address->id, $courier, $serviceCode);
+                $this->fail("Expected ShippingRateException for {$courier}:{$serviceCode}");
+            } catch (ShippingRateException $e) {
+                $this->assertSame('shipping_rate_not_found', $e->errorCode());
+                $this->assertSame(422, $e->statusCode());
+            }
+        }
+
+        Http::assertNothingSent();
     }
 }

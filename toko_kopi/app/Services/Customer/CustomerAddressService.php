@@ -43,6 +43,52 @@ class CustomerAddressService
             ->get();
     }
 
+    /**
+     * @return array<string, mixed>
+     */
+    public function serializeAddress(CustomerAddress $address): array
+    {
+        $hasValidRegion = strtolower(trim((string) $address->province_id)) !== 'manual'
+            && strtolower(trim((string) $address->city_id)) !== 'manual'
+            && trim((string) ($address->subdistrict_id ?? '')) !== '';
+
+        return [
+            'id' => (int) $address->id,
+            'label' => (string) $address->label,
+            'recipient_name' => (string) $address->recipient_name,
+            'recipient_phone' => (string) $address->recipient_phone,
+            'address_line' => (string) $address->address_line,
+            'province_id' => (string) $address->province_id,
+            'province_name' => (string) $address->province_name,
+            'city_id' => (string) $address->city_id,
+            'city_name' => (string) $address->city_name,
+            'district_id' => $address->district_id !== null ? (string) $address->district_id : null,
+            'district_name' => $address->district_name !== null ? (string) $address->district_name : null,
+            'subdistrict_id' => $address->subdistrict_id !== null ? (string) $address->subdistrict_id : null,
+            'subdistrict_name' => $address->subdistrict_name !== null ? (string) $address->subdistrict_name : null,
+            'formatted_region' => $address->formattedRegion(),
+            'postal_code' => (string) $address->postal_code,
+            'is_primary' => (bool) $address->is_primary,
+            'has_valid_region' => $hasValidRegion,
+            'edit_url' => route('customer.addresses.edit', $address),
+            'update_url' => route('customer.addresses.update', $address),
+            'delete_url' => route('customer.addresses.destroy', $address),
+            'set_primary_url' => route('customer.addresses.set-primary', $address),
+        ];
+    }
+
+    /**
+     * @param  Collection<int, CustomerAddress>  $addresses
+     * @return array<int, array<string, mixed>>
+     */
+    public function serializeAddresses(Collection $addresses): array
+    {
+        return $addresses
+            ->map(fn (CustomerAddress $address): array => $this->serializeAddress($address))
+            ->values()
+            ->all();
+    }
+
     public function create(Customer $customer, array $data): CustomerAddress
     {
         $attributes = Arr::only($data, self::ALLOWED_ATTRIBUTES);

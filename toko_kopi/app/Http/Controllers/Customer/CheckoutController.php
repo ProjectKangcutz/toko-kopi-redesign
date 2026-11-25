@@ -91,24 +91,7 @@ class CheckoutController extends Controller
             ];
         })->values()->all();
 
-        $serializedAddresses = $addresses->map(static function (CustomerAddress $address): array {
-            $hasValidRegion = strtolower(trim((string) $address->province_id)) !== 'manual'
-                && strtolower(trim((string) $address->city_id)) !== 'manual'
-                && trim((string) ($address->subdistrict_id ?? '')) !== '';
-
-            return [
-                'id' => (int) $address->id,
-                'label' => (string) $address->label,
-                'recipient_name' => (string) $address->recipient_name,
-                'recipient_phone' => (string) $address->recipient_phone,
-                'address_line' => (string) $address->address_line,
-                'formatted_region' => $address->formattedRegion(),
-                'postal_code' => (string) $address->postal_code,
-                'is_primary' => (bool) $address->is_primary,
-                'has_valid_region' => $hasValidRegion,
-                'edit_url' => route('customer.addresses.edit', $address),
-            ];
-        })->values()->all();
+        $serializedAddresses = $this->addressService->serializeAddresses($addresses);
 
         $serverSummary = [
             'valid_quantity' => (int) ($cart['valid_quantity'] ?? 0),
@@ -123,9 +106,24 @@ class CheckoutController extends Controller
             'canCheckout' => $canCheckout,
             'quoteUrl' => ($canCheckout && $addresses->isNotEmpty()) ? route('customer.shipping.quote') : null,
             'storeUrl' => ($canCheckout && $addresses->isNotEmpty()) ? route('customer.checkout.store') : null,
+            'quoteEndpoint' => $canCheckout ? route('customer.shipping.quote') : null,
+            'storeEndpoint' => $canCheckout ? route('customer.checkout.store') : null,
             'initialAddressId' => ($canCheckout && $selectedAddress) ? (int) $selectedAddress->id : null,
             'addresses' => $canCheckout ? $serializedAddresses : [],
             'summary' => $serverSummary,
+            'customerDefaults' => [
+                'name' => (string) ($customer->name ?? ''),
+                'phone' => (string) ($customer->phone ?? ''),
+            ],
+            'addressEndpoints' => [
+                'indexUrl' => route('customer.addresses.index'),
+                'storeUrl' => route('customer.addresses.store'),
+                'regionSearchUrl' => route('customer.regions.search'),
+                'regionProvincesUrl' => route('customer.regions.provinces'),
+                'regionCitiesTemplate' => route('customer.regions.cities', ['provinceId' => '__ID__']),
+                'regionDistrictsTemplate' => route('customer.regions.districts', ['cityId' => '__ID__']),
+                'regionSubdistrictsTemplate' => route('customer.regions.subdistricts', ['districtId' => '__ID__']),
+            ],
         ];
 
         $storeName = $this->resolveStoreName();

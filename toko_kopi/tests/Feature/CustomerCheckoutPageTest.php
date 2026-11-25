@@ -349,8 +349,8 @@ class CustomerCheckoutPageTest extends TestCase
                         [
                             'name' => 'SiCepat Ekspres',
                             'code' => 'sicepat',
-                            'service' => 'BEST',
-                            'description' => 'Besok Sampai Tujuan',
+                            'service' => 'REG',
+                            'description' => 'Layanan Reguler',
                             'cost' => 32000,
                             'etd' => '1 day',
                         ],
@@ -358,7 +358,7 @@ class CustomerCheckoutPageTest extends TestCase
                 ], 200),
         ]);
 
-        // Quote alamat pertama
+        // Quote alamat pertama (terurut dari yang termurah)
         $quote1 = $this->actingAs($customer, 'customer')
             ->postJson(route('customer.shipping.quote'), [
                 'address_id' => $addressPrimary->id,
@@ -368,10 +368,10 @@ class CustomerCheckoutPageTest extends TestCase
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.address_id', $addressPrimary->id)
             ->assertJsonPath('data.destination_id', '73539')
-            ->assertJsonPath('data.rates.0.courier_code', 'jne')
-            ->assertJsonPath('data.rates.0.cost', 19000)
-            ->assertJsonPath('data.rates.1.courier_code', 'jnt')
-            ->assertJsonPath('data.rates.1.cost', 17000);
+            ->assertJsonPath('data.rates.0.courier_code', 'jnt')
+            ->assertJsonPath('data.rates.0.cost', 17000)
+            ->assertJsonPath('data.rates.1.courier_code', 'jne')
+            ->assertJsonPath('data.rates.1.cost', 19000);
 
         // Ganti ke alamat kedua -> quote baru dipanggil untuk destination 17500 dengan daftar layanan baru
         $quote2 = $this->actingAs($customer, 'customer')
@@ -385,7 +385,7 @@ class CustomerCheckoutPageTest extends TestCase
             ->assertJsonPath('data.destination_id', '17500')
             ->assertJsonCount(1, 'data.rates')
             ->assertJsonPath('data.rates.0.courier_code', 'sicepat')
-            ->assertJsonPath('data.rates.0.service_code', 'BEST')
+            ->assertJsonPath('data.rates.0.service_code', 'REG')
             ->assertJsonPath('data.rates.0.cost', 32000)
             ->assertJsonPath('data.rates.0.etd', '1 day');
 
@@ -584,5 +584,177 @@ class CustomerCheckoutPageTest extends TestCase
             ->assertStatus(200)
             ->assertSee('Lanjut ke Checkout')
             ->assertSee(route('customer.checkout.index'), false);
+    }
+
+    public function test_checkout_order_creation_rejects_manipulated_non_whitelisted_courier_or_service(): void
+    {
+        $this->configureRajaOngkir();
+
+        $customer = $this->createCustomer();
+        $address = $this->createAddress($customer, ['subdistrict_id' => '73539']);
+        $product = $this->createProduct(['price' => 85000, 'weight_grams' => 500]);
+        app(CartService::class)->addItem($product->id, null, 1, $customer);
+
+        $this->actingAs($customer, 'customer')
+            ->postJson(route('customer.checkout.store'), [
+                'address_id' => $address->id,
+                'courier_code' => 'jne',
+                'service_code' => 'OKE',
+                'idempotency_key' => 'tamper-non-whitelist-0001',
+            ])
+            ->assertStatus(422)
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('error_code', 'shipping_rate_not_found');
+
+        $this->actingAs($customer, 'customer')
+            ->postJson(route('customer.checkout.store'), [
+                'address_id' => $address->id,
+                'courier_code' => 'tiki',
+                'service_code' => 'REG',
+                'idempotency_key' => 'tamper-non-whitelist-0002',
+            ])
+            ->assertStatus(422)
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('error_code', 'shipping_rate_not_found');
+
+        $this->assertSame(0, Order::count());
+        Http::assertNothingSent();
+    }
+
+    public function test_checkout_page_exposes_inline_address_management_and_region_endpoints(): void
+    {
+        $customer = $this->createCustomer();
+        $product = $this->createProduct(['price' => 60000, 'weight_grams' => 300]);
+        app(CartService::class)->addItem($product->id, null, 1, $customer);
+
+        $response = $this->actingAs($customer, 'customer')
+            ->get(route('customer.checkout.index'));
+
+        $response->assertStatus(200)
+            ->assertSee('openCreateAddressModal', false)
+            ->assertSee('openEditAddressModal', false)
+            ->assertSee('setPrimaryAddress', false)
+            ->assertSee('confirmDeleteAddress', false)
+            ->assertSee('groupedRates', false);
+
+        $checkoutConfig = $response->viewData('checkoutConfig');
+        $this->assertSame(route('customer.shipping.quote'), $checkoutConfig['quoteEndpoint']);
+        $this->assertSame(route('customer.checkout.store'), $checkoutConfig['storeEndpoint']);
+        $this->assertSame(route('customer.addresses.store'), $checkoutConfig['addressEndpoints']['storeUrl']);
+        $this->assertSame(route('customer.regions.provinces'), $checkoutConfig['addressEndpoints']['regionProvincesUrl']);
+        $this->assertSame(route('customer.regions.search'), $checkoutConfig['addressEndpoints']['regionSearchUrl']);
+    }
+
+    public function test_customer_can_add_edit_set_primary_and_delete_addresses_via_checkout_json_endpoints(): void
+    {
+        $customer = $this->createCustomer();
+        $otherCustomer = $this->createCustomer();
+        $otherAddress = $this->createAddress($otherCustomer, ['label' => 'Alamat Orang Lain']);
+
+        // 1. Tambah alamat pertama via JSON -> otomatis utama & kembalikan list addresses
+        $createRes = $this->actingAs($customer, 'customer')
+            ->postJson(route('customer.addresses.store'), [
+                'label' => 'Rumah',
+                'recipient_name' => 'Rina Kartika',
+                'recipient_phone' => '081234567890',
+                'address_line' => 'Jl. Braga No. 45',
+                'province_id' => '9',
+                'province_name' => 'Jawa Barat',
+                'city_id' => '23',
+                'city_name' => 'Kota Bandung',
+                'district_id' => '345',
+                'district_name' => 'Sumur Bandung',
+                'subdistrict_id' => '73539',
+                'subdistrict_name' => 'Braga',
+                'postal_code' => '40111',
+                'is_primary' => false,
+            ]);
+
+        $createRes->assertStatus(201)
+            ->assertJsonPath('address.label', 'Rumah')
+            ->assertJsonPath('address.is_primary', true)
+            ->assertJsonPath('address.has_valid_region', true)
+            ->assertJsonCount(1, 'addresses');
+
+        $firstId = (int) $createRes->json('address.id');
+
+        // 2. Tambah alamat kedua
+        $createSecond = $this->actingAs($customer, 'customer')
+            ->postJson(route('customer.addresses.store'), [
+                'label' => 'Kantor',
+                'recipient_name' => 'Rina Kantor',
+                'recipient_phone' => '081299998888',
+                'address_line' => 'Jl. Sudirman No. 10',
+                'province_id' => '6',
+                'province_name' => 'DKI Jakarta',
+                'city_id' => '152',
+                'city_name' => 'Kota Jakarta Pusat',
+                'district_id' => '2001',
+                'district_name' => 'Tanah Abang',
+                'subdistrict_id' => '17500',
+                'subdistrict_name' => 'Bendungan Hilir',
+                'postal_code' => '10210',
+                'is_primary' => false,
+            ])
+            ->assertStatus(201)
+            ->assertJsonCount(2, 'addresses');
+
+        $secondId = (int) $createSecond->json('address.id');
+
+        // 3. Edit alamat kedua via JSON
+        $this->actingAs($customer, 'customer')
+            ->putJson(route('customer.addresses.update', $secondId), [
+                'label' => 'Kantor Pusat',
+                'recipient_name' => 'Rina Kantor Baru',
+                'recipient_phone' => '081299998888',
+                'address_line' => 'Jl. Sudirman No. 12',
+                'province_id' => '6',
+                'province_name' => 'DKI Jakarta',
+                'city_id' => '152',
+                'city_name' => 'Kota Jakarta Pusat',
+                'district_id' => '2001',
+                'district_name' => 'Tanah Abang',
+                'subdistrict_id' => '17500',
+                'subdistrict_name' => 'Bendungan Hilir',
+                'postal_code' => '10210',
+                'is_primary' => false,
+            ])
+            ->assertStatus(200)
+            ->assertJsonPath('address.label', 'Kantor Pusat')
+            ->assertJsonCount(2, 'addresses');
+
+        // 4. Jadikan alamat kedua sebagai utama via JSON
+        $this->actingAs($customer, 'customer')
+            ->patchJson(route('customer.addresses.set-primary', $secondId))
+            ->assertStatus(200)
+            ->assertJsonPath('address.is_primary', true)
+            ->assertJsonPath('addresses.0.id', $secondId);
+
+        // 5. Tidak boleh ubah/hapus alamat milik pelanggan lain
+        $this->actingAs($customer, 'customer')
+            ->putJson(route('customer.addresses.update', $otherAddress->id), [
+                'label' => 'Dibajak',
+                'recipient_name' => 'Bajak',
+                'recipient_phone' => '081234567890',
+                'address_line' => 'Jl. X',
+                'province_id' => '9',
+                'province_name' => 'Jawa Barat',
+                'city_id' => '23',
+                'city_name' => 'Kota Bandung',
+                'postal_code' => '40111',
+            ])
+            ->assertStatus(403);
+
+        $this->actingAs($customer, 'customer')
+            ->deleteJson(route('customer.addresses.destroy', $otherAddress->id))
+            ->assertStatus(403);
+
+        // 6. Hapus alamat utama -> mempromosikan alamat pertama menjadi utama dan mengembalikan daftar terbaru
+        $this->actingAs($customer, 'customer')
+            ->deleteJson(route('customer.addresses.destroy', $secondId))
+            ->assertStatus(200)
+            ->assertJsonPath('deleted_address_id', $secondId)
+            ->assertJsonPath('promoted_primary_address.id', $firstId)
+            ->assertJsonCount(1, 'addresses');
     }
 }

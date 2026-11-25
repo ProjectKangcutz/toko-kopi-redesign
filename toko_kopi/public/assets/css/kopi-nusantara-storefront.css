@@ -843,3 +843,174 @@ body.kn-auth-body {
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
+
+/* Checkout Courier Groups & Inline Address Management */
+.kn-courier-group {
+  border: 1px solid var(--kn-border);
+  border-radius: 0.95rem;
+  background-color: var(--kn-surface);
+  overflow: hidden;
+}
+
+.kn-courier-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 1rem;
+  background-color: var(--kn-cream);
+  border-bottom: 1px solid var(--kn-border-soft);
+}
+
+.kn-courier-group-body {
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.kn-courier-group .mlm-checkout-option {
+  padding: 0.85rem 1rem;
+}
+
+.kn-address-option-card {
+  border: 1px solid var(--kn-border);
+  border-radius: 0.9rem;
+  background-color: var(--kn-surface);
+  transition: border-color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.kn-address-option-card:hover {
+  border-color: var(--kn-caramel);
+}
+
+.kn-address-option-card.is-selected {
+  border-color: var(--kn-forest);
+  background-color: var(--kn-sage);
+  box-shadow: 0 4px 14px -4px rgba(36, 92, 69, 0.18);
+}
+
+.kn-address-option-card .mlm-checkout-option {
+  border: 0;
+  border-radius: 0;
+  background-color: transparent;
+  box-shadow: none;
+}
+
+.kn-address-option-card .mlm-checkout-option:hover,
+.kn-address-option-card .mlm-checkout-option.is-selected {
+  background-color: transparent;
+  box-shadow: none;
+}
+
+.kn-address-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 1rem 0.75rem;
+  border-top: 1px dashed rgba(166, 107, 67, 0.24);
+}
+
+.kn-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1060;
+  background-color: rgba(31, 20, 15, 0.64);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.kn-modal-panel {
+  width: 100%;
+  max-width: 720px;
+  max-height: calc(100vh - 2rem);
+  display: flex;
+  flex-direction: column;
+  background-color: var(--kn-surface);
+  border: 1px solid var(--kn-border);
+  border-radius: 1.15rem;
+  box-shadow: 0 24px 60px rgba(24, 15, 10, 0.34);
+  overflow: hidden;
+}
+
+.kn-modal-panel--sm {
+  max-width: 460px;
+}
+
+.kn-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background-color: var(--kn-cream);
+  border-bottom: 1px solid var(--kn-border);
+}
+
+.kn-modal-body {
+  padding: 1.25rem;
+  overflow-y: auto;
+}
+
+.kn-modal-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  padding: 0.9rem 1.25rem;
+  background-color: var(--kn-canvas);
+  border-top: 1px solid var(--kn-border-soft);
+}
+
+.kn-label-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.32rem 0.75rem;
+  border-radius: 9999px;
+  border: 1px solid var(--kn-border);
+  background-color: var(--kn-surface);
+  color: var(--kn-espresso);
+  font-size: 0.78rem;
+  font-weight: 600;
+  transition: all 0.15s ease;
+}
+
+.kn-label-chip:hover {
+  border-color: var(--kn-caramel);
+  background-color: var(--kn-cream);
+}
+
+.kn-label-chip.is-active {
+  border-color: var(--kn-forest);
+  background-color: var(--kn-forest);
+  color: #FFFFFF;
+}
+
+.kn-region-box {
+  background-color: var(--kn-canvas);
+  border: 1px solid var(--kn-border);
+  border-radius: 0.9rem;
+  padding: 1rem;
+}
+
+@media (max-width: 575.98px) {
+  .kn-modal-backdrop {
+    padding: 0.5rem;
+  }
+
+  .kn-modal-panel {
+    max-height: calc(100vh - 1rem);
+  }
+
+  .kn-modal-body {
+    padding: 1rem;
+  }
+}
+

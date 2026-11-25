@@ -73,13 +73,19 @@ class ShippingRateService
         $billableWeightGrams = $this->calculateBillableWeightGrams($actualWeightGrams);
         $itemValue = round((float) ($cart['subtotal'] ?? 0), 2);
 
+        $whitelist = self::configuredWhitelist();
+        if ($whitelist === []) {
+            throw ShippingRateException::noActiveCouriers();
+        }
+
         $activeCouriers = ShippingCourier::query()
             ->with(['services' => static fn ($query) => $query->orderBy('id')])
             ->where('is_active', true)
             ->orderBy('sort_order')
             ->orderBy('id')
             ->get()
-            ->keyBy(static fn (ShippingCourier $courier): string => strtolower(trim($courier->code)));
+            ->keyBy(static fn (ShippingCourier $courier): string => strtolower(trim($courier->code)))
+            ->filter(static fn (ShippingCourier $courier, string $code): bool => isset($whitelist[$code]));
 
         if ($activeCouriers->isEmpty()) {
             throw ShippingRateException::noActiveCouriers();
@@ -102,7 +108,8 @@ class ShippingRateService
             $destinationId,
             $billableWeightGrams,
             $itemValue,
-            $targetCodes
+            $targetCodes,
+            $whitelist
         );
 
         $cached = Cache::get($cacheKey);
@@ -125,7 +132,7 @@ class ShippingRateService
             $targetCodes
         );
 
-        $filteredRates = $this->filterAndEnrichRates($rawRates, $activeCouriers, $targetCodes);
+        $filteredRates = $this->filterAndEnrichRates($rawRates, $activeCouriers, $targetCodes, $whitelist);
 
         Cache::put($cacheKey, $filteredRates, now()->addSeconds(self::CACHE_TTL_SECONDS));
 
@@ -143,7 +150,7 @@ class ShippingRateService
 
     /**
      * Memilih dan memverifikasi tarif resmi satu layanan kurir di sisi server
-     * sehingga nilai ongkos kirim dari input browser tidak pernah dipercaya.
+     * sehingga nilai ongkos kirim maupun kurir/layanan non-whitelist dari input browser tidak pernah dipercaya.
      *
      * @return array{
      *     courier_code: string,
@@ -167,9 +174,14 @@ class ShippingRateService
         string $serviceCode
     ): array {
         $normalizedCourier = strtolower(trim($courierCode));
-        $normalizedService = strtoupper(trim($serviceCode));
+        $normalizedService = self::normalizeServiceCode($serviceCode);
 
         if ($normalizedCourier === '' || $normalizedService === '') {
+            throw ShippingRateException::rateNotFound();
+        }
+
+        $whitelist = self::configuredWhitelist();
+        if (! $this->isWhitelistedService($normalizedCourier, $normalizedService, $whitelist)) {
             throw ShippingRateException::rateNotFound();
         }
 
@@ -177,8 +189,8 @@ class ShippingRateService
 
         foreach ($result['rates'] as $rate) {
             if (
-                strtolower($rate['courier_code']) === $normalizedCourier
-                && strtoupper($rate['service_code']) === $normalizedService
+                strtolower(trim((string) $rate['courier_code'])) === $normalizedCourier
+                && self::normalizeServiceCode((string) $rate['service_code']) === $normalizedService
             ) {
                 return array_merge($rate, [
                     'origin_id' => $result['origin_id'],
@@ -216,7 +228,66 @@ class ShippingRateService
     }
 
     /**
+     * @return array<string, array<int, string>>
+     */
+    public static function configuredWhitelist(): array
+    {
+        $raw = config('shipping.whitelist', []);
+        if (! is_array($raw)) {
+            return [];
+        }
+
+        $normalized = [];
+
+        foreach ($raw as $courierCode => $services) {
+            $courier = strtolower(trim((string) $courierCode));
+            if ($courier === '' || ! is_array($services)) {
+                continue;
+            }
+
+            $allowedServices = [];
+            foreach ($services as $service) {
+                $normalizedService = self::normalizeServiceCode((string) $service);
+                if ($normalizedService !== '') {
+                    $allowedServices[] = $normalizedService;
+                }
+            }
+
+            $allowedServices = array_values(array_unique($allowedServices));
+            if ($allowedServices !== []) {
+                $normalized[$courier] = $allowedServices;
+            }
+        }
+
+        return $normalized;
+    }
+
+    public static function normalizeServiceCode(string $serviceCode): string
+    {
+        $collapsed = preg_replace('/\s+/', ' ', trim($serviceCode)) ?? '';
+
+        return strtoupper($collapsed);
+    }
+
+    /**
+     * @param  array<string, array<int, string>>|null  $whitelist
+     */
+    public function isWhitelistedService(string $courierCode, string $serviceCode, ?array $whitelist = null): bool
+    {
+        $resolvedWhitelist = $whitelist ?? self::configuredWhitelist();
+        $courier = strtolower(trim($courierCode));
+        $service = self::normalizeServiceCode($serviceCode);
+
+        if ($courier === '' || $service === '' || ! isset($resolvedWhitelist[$courier])) {
+            return false;
+        }
+
+        return in_array($service, $resolvedWhitelist[$courier], true);
+    }
+
+    /**
      * @param  array<int, string>  $courierCodes
+     * @param  array<string, array<int, string>>|null  $whitelist
      */
     public static function buildCacheKey(
         string $baseUrl,
@@ -224,10 +295,20 @@ class ShippingRateService
         string $destinationId,
         int $weightGrams,
         float $itemValue,
-        array $courierCodes
+        array $courierCodes,
+        ?array $whitelist = null
     ): string {
         $sortedCouriers = RajaOngkirShippingClient::normalizeCourierCodes($courierCodes);
         sort($sortedCouriers);
+
+        $resolvedWhitelist = $whitelist ?? self::configuredWhitelist();
+        ksort($resolvedWhitelist);
+        $whitelistParts = [];
+        foreach ($resolvedWhitelist as $courier => $services) {
+            $sortedServices = $services;
+            sort($sortedServices);
+            $whitelistParts[] = $courier.':'.implode('+', $sortedServices);
+        }
 
         $version = self::cacheVersion();
         $signature = implode('|', [
@@ -237,6 +318,7 @@ class ShippingRateService
             (string) $weightGrams,
             number_format($itemValue, 2, '.', ''),
             implode(',', $sortedCouriers),
+            implode(';', $whitelistParts),
         ]);
 
         return 'shipping:rates:v2:'.$version.':'.sha1($signature);
@@ -318,6 +400,7 @@ class ShippingRateService
      * }>  $rawRates
      * @param  \Illuminate\Support\Collection<string, ShippingCourier>  $activeCouriers
      * @param  array<int, string>  $targetCodes
+     * @param  array<string, array<int, string>>  $whitelist
      * @return array<int, array{
      *     courier_code: string,
      *     courier_name: string,
@@ -328,23 +411,41 @@ class ShippingRateService
      *     etd: ?string
      * }>
      */
-    protected function filterAndEnrichRates(array $rawRates, $activeCouriers, array $targetCodes): array
+    protected function filterAndEnrichRates(array $rawRates, $activeCouriers, array $targetCodes, array $whitelist): array
     {
-        $filtered = [];
+        $deduped = [];
 
         foreach ($rawRates as $rate) {
-            $courierCode = strtolower(trim($rate['courier_code']));
+            $courierCode = strtolower(trim((string) ($rate['courier_code'] ?? '')));
 
-            if (! in_array($courierCode, $targetCodes, true) || ! $activeCouriers->has($courierCode)) {
+            if (
+                ! in_array($courierCode, $targetCodes, true)
+                || ! $activeCouriers->has($courierCode)
+                || ! isset($whitelist[$courierCode])
+            ) {
+                continue;
+            }
+
+            $rawServiceCode = trim((string) ($rate['service_code'] ?? ''));
+            $normalizedServiceCode = self::normalizeServiceCode($rawServiceCode);
+            if (
+                $normalizedServiceCode === ''
+                || ! in_array($normalizedServiceCode, $whitelist[$courierCode], true)
+            ) {
                 continue;
             }
 
             /** @var ShippingCourier $courier */
             $courier = $activeCouriers->get($courierCode);
 
+            $canonicalServiceCode = $this->canonicalDedupeServiceCode($courierCode, $normalizedServiceCode);
+
             /** @var ?ShippingService $matchedService */
             $matchedService = $courier->services->first(
-                static fn (ShippingService $service): bool => strtoupper(trim($service->service_code)) === strtoupper(trim($rate['service_code']))
+                fn (ShippingService $service): bool => $this->canonicalDedupeServiceCode(
+                    $courierCode,
+                    self::normalizeServiceCode((string) $service->service_code)
+                ) === $canonicalServiceCode
             );
 
             // Jika layanan terdaftar di master lokal tetapi dinonaktifkan admin, kecualikan dari hasil.
@@ -352,17 +453,60 @@ class ShippingRateService
                 continue;
             }
 
-            $filtered[] = [
+            $candidate = [
                 'courier_code' => $courierCode,
                 'courier_name' => $courier->name ?: $rate['courier_name'],
-                'service_code' => $rate['service_code'],
+                'service_code' => $rawServiceCode,
                 'service_name' => $matchedService?->service_name ?: $rate['service_name'],
                 'description' => $rate['description'],
                 'cost' => $rate['cost'],
                 'etd' => $rate['etd'],
             ];
+
+            $dedupeKey = $courierCode.':'.$canonicalServiceCode;
+
+            if (
+                ! isset($deduped[$dedupeKey])
+                || (float) $candidate['cost'] < (float) $deduped[$dedupeKey]['cost']
+            ) {
+                $deduped[$dedupeKey] = $candidate;
+            }
         }
 
+        $filtered = array_values($deduped);
+
+        usort($filtered, static function (array $a, array $b) use ($activeCouriers): int {
+            $costComparison = (float) $a['cost'] <=> (float) $b['cost'];
+            if ($costComparison !== 0) {
+                return $costComparison;
+            }
+
+            $orderA = (int) ($activeCouriers->get($a['courier_code'])?->sort_order ?? PHP_INT_MAX);
+            $orderB = (int) ($activeCouriers->get($b['courier_code'])?->sort_order ?? PHP_INT_MAX);
+            if ($orderA !== $orderB) {
+                return $orderA <=> $orderB;
+            }
+
+            $courierComparison = strcmp($a['courier_code'], $b['courier_code']);
+            if ($courierComparison !== 0) {
+                return $courierComparison;
+            }
+
+            return strcmp(
+                self::normalizeServiceCode((string) $a['service_code']),
+                self::normalizeServiceCode((string) $b['service_code'])
+            );
+        });
+
         return $filtered;
+    }
+
+    protected function canonicalDedupeServiceCode(string $courierCode, string $normalizedServiceCode): string
+    {
+        if ($courierCode === 'anteraja' && in_array($normalizedServiceCode, ['REG', 'REGULER'], true)) {
+            return 'REG';
+        }
+
+        return $normalizedServiceCode;
     }
 }
