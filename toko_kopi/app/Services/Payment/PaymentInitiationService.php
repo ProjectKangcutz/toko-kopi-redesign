@@ -41,7 +41,7 @@ class PaymentInitiationService
      *     reused_token: bool
      * }
      */
-    public function initiateForOrder(Customer $customer, Order $order): array
+    public function initiateForOrder(Customer $customer, Order $order, bool $forceNew = false): array
     {
         if ($customer->status !== 'active') {
             throw new AuthorizationException('Akun pelanggan Anda sedang dinonaktifkan.');
@@ -62,7 +62,44 @@ class PaymentInitiationService
         }
 
         try {
-            $prepared = DB::transaction(function () use ($customer, $order, $config): array {
+            $supersedeResults = [];
+
+            if ($forceNew) {
+                $pendingCandidates = DB::transaction(function () use ($customer, $order): Collection {
+                    $lockedCustomer = Customer::whereKey($customer->id)->lockForUpdate()->firstOrFail();
+                    if ($lockedCustomer->status !== 'active') {
+                        throw new AuthorizationException('Akun pelanggan Anda sedang dinonaktifkan.');
+                    }
+
+                    $lockedOrder = Order::whereKey($order->id)
+                        ->lockForUpdate()
+                        ->firstOrFail();
+
+                    if ((int) $lockedOrder->customer_id !== (int) $lockedCustomer->id) {
+                        throw new AuthorizationException('Anda tidak memiliki akses ke pesanan ini.');
+                    }
+
+                    $this->assertOrderEligibleForPayment($lockedOrder);
+                    // Pastikan sisa waktu pembayaran masih cukup sebelum membatalkan sesi lama di Midtrans.
+                    $this->calculateSnapExpiry($lockedOrder);
+
+                    return Payment::where('order_id', $lockedOrder->id)
+                        ->where('status', 'pending')
+                        ->where(function ($query): void {
+                            $query->whereNull('expired_at')
+                                ->orWhere('expired_at', '>', now());
+                        })
+                        ->orderByDesc('id')
+                        ->lockForUpdate()
+                        ->get();
+                });
+
+                if ($pendingCandidates->isNotEmpty()) {
+                    $supersedeResults = $this->cancelOrSyncActivePaymentsForSwitch($pendingCandidates);
+                }
+            }
+
+            $prepared = DB::transaction(function () use ($customer, $order, $config, $forceNew, $supersedeResults): array {
                 $lockedCustomer = Customer::whereKey($customer->id)->lockForUpdate()->firstOrFail();
                 if ($lockedCustomer->status !== 'active') {
                     throw new AuthorizationException('Akun pelanggan Anda sedang dinonaktifkan.');
@@ -84,7 +121,14 @@ class PaymentInitiationService
                     ->lockForUpdate()
                     ->get();
 
-                $reusablePayment = $this->findReusablePendingPayment($existingPayments, $lockedOrder);
+                if ($forceNew && $supersedeResults !== []) {
+                    $this->applySupersededPaymentTransitions($existingPayments, $lockedOrder, $lockedCustomer, $supersedeResults);
+                }
+
+                $reusablePayment = $forceNew
+                    ? null
+                    : $this->findReusablePendingPayment($existingPayments, $lockedOrder);
+
                 if ($reusablePayment !== null) {
                     $this->transitionOrderToAwaitingPaymentIfNeeded(
                         $lockedOrder,
@@ -142,7 +186,7 @@ class PaymentInitiationService
             // Panggilan HTTP eksternal dijalankan di luar DB transaction.
             $snapResponse = $this->midtransClient->createSnapTransaction($prepared['snap_payload']);
 
-            $persisted = DB::transaction(function () use ($customer, $order, $prepared, $snapResponse): array {
+            $persisted = DB::transaction(function () use ($customer, $order, $prepared, $snapResponse, $forceNew): array {
                 $lockedCustomer = Customer::whereKey($customer->id)->lockForUpdate()->firstOrFail();
                 if ($lockedCustomer->status !== 'active') {
                     throw new AuthorizationException('Akun pelanggan Anda sedang dinonaktifkan.');
@@ -163,7 +207,9 @@ class PaymentInitiationService
                     ->lockForUpdate()
                     ->get();
 
-                $reusablePayment = $this->findReusablePendingPayment($existingPayments, $lockedOrder);
+                $reusablePayment = $forceNew
+                    ? null
+                    : $this->findReusablePendingPayment($existingPayments, $lockedOrder);
                 if ($reusablePayment !== null) {
                     $this->transitionOrderToAwaitingPaymentIfNeeded(
                         $lockedOrder,
@@ -412,6 +458,9 @@ class PaymentInitiationService
         $initiateUrl = route('customer.orders.payment.initiate', $order);
         $statusCheckUrl = route('customer.orders.payment.status', $order);
         $refreshUrl = route('customer.orders.show', $order);
+        $latestPayment = $order->relationLoaded('latestPayment')
+            ? $order->latestPayment
+            : $order->latestPayment()->first();
 
         return [
             'can_pay' => true,
@@ -427,6 +476,8 @@ class PaymentInitiationService
                 'refreshUrl' => $refreshUrl,
                 'clientKey' => $publicUiConfig['client_key'],
                 'snapJsUrl' => $publicUiConfig['snap_js_url'],
+                'hasPaymentAttempt' => $latestPayment !== null,
+                'latestMidtransOrderId' => $latestPayment?->midtrans_order_id,
             ],
         ];
     }
@@ -718,5 +769,207 @@ class PaymentInitiationService
             'actor_id' => $customer->id,
             'created_at' => now(),
         ]);
+    }
+
+    /**
+     * Memverifikasi status transaksi aktif di Midtrans dan membatalkannya sebelum
+     * membuat sesi Snap baru untuk metode pembayaran lain (di luar DB transaction).
+     *
+     * @param  Collection<int, Payment>  $pendingPayments
+     * @return array<int, array{reason: string, payload: array<string, mixed>}>
+     */
+    protected function cancelOrSyncActivePaymentsForSwitch(Collection $pendingPayments): array
+    {
+        $results = [];
+
+        foreach ($pendingPayments as $pendingPayment) {
+            $midtransOrderId = trim((string) $pendingPayment->midtrans_order_id);
+            if ($midtransOrderId === '') {
+                $results[$pendingPayment->id] = [
+                    'reason' => 'not_found_on_midtrans',
+                    'payload' => ['reason' => 'missing_midtrans_order_id'],
+                ];
+                continue;
+            }
+
+            $corePayload = $this->fetchTransactionStatusOrNull($midtransOrderId);
+            if ($corePayload === null) {
+                $results[$pendingPayment->id] = [
+                    'reason' => 'not_found_on_midtrans',
+                    'payload' => [
+                        'midtrans_order_id' => $midtransOrderId,
+                        'reason' => 'not_found_on_midtrans_during_method_switch',
+                    ],
+                ];
+                continue;
+            }
+
+            $this->guardAgainstPaidOrChallengeStatus($pendingPayment, $corePayload);
+
+            $txStatus = strtolower(trim((string) ($corePayload['transaction_status'] ?? '')));
+            if (in_array($txStatus, ['deny', 'cancel', 'expire'], true)) {
+                $this->synchronizationService->synchronizeFromCoreApiStatus($pendingPayment, $corePayload);
+                continue;
+            }
+
+            try {
+                $cancelPayload = $this->midtransClient->cancelTransaction($midtransOrderId);
+            } catch (MidtransPaymentException $cancelException) {
+                $httpStatus = $cancelException->diagnostics()['http_status'] ?? null;
+                $category = $cancelException->diagnostics()['category'] ?? null;
+
+                if ($category === 'upstream_not_found' || $httpStatus === 412) {
+                    $rechecked = $this->fetchTransactionStatusOrNull($midtransOrderId);
+                    if ($rechecked === null) {
+                        $results[$pendingPayment->id] = [
+                            'reason' => 'not_found_on_midtrans',
+                            'payload' => [
+                                'midtrans_order_id' => $midtransOrderId,
+                                'reason' => 'not_found_after_cancel_attempt',
+                            ],
+                        ];
+                        continue;
+                    }
+
+                    $this->guardAgainstPaidOrChallengeStatus($pendingPayment, $rechecked);
+
+                    $recheckStatus = strtolower(trim((string) ($rechecked['transaction_status'] ?? '')));
+                    if (in_array($recheckStatus, ['deny', 'cancel', 'expire'], true)) {
+                        $this->synchronizationService->synchronizeFromCoreApiStatus($pendingPayment, $rechecked);
+                        continue;
+                    }
+                }
+
+                throw $cancelException;
+            }
+
+            $cancelStatus = strtolower(trim((string) ($cancelPayload['transaction_status'] ?? '')));
+            if ($cancelStatus === 'settlement' || $cancelStatus === 'capture') {
+                $this->guardAgainstPaidOrChallengeStatus($pendingPayment, $cancelPayload);
+            }
+
+            unset($cancelPayload['signature_key']);
+
+            $results[$pendingPayment->id] = [
+                'reason' => 'cancelled_on_midtrans',
+                'payload' => $cancelPayload,
+            ];
+        }
+
+        return $results;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    protected function fetchTransactionStatusOrNull(string $midtransOrderId): ?array
+    {
+        try {
+            $payload = $this->midtransClient->getTransactionStatus($midtransOrderId);
+        } catch (MidtransPaymentException $e) {
+            if (($e->diagnostics()['category'] ?? null) === 'upstream_not_found') {
+                return null;
+            }
+
+            throw $e;
+        }
+
+        $returnedOrderId = trim((string) ($payload['order_id'] ?? ''));
+        if ($returnedOrderId !== '' && $returnedOrderId !== $midtransOrderId) {
+            throw MidtransPaymentException::malformedResponse([
+                'category' => 'order_id_mismatch',
+            ]);
+        }
+
+        return $payload;
+    }
+
+    /**
+     * @param  array<string, mixed>  $corePayload
+     */
+    protected function guardAgainstPaidOrChallengeStatus(Payment $payment, array $corePayload): void
+    {
+        $txStatus = strtolower(trim((string) ($corePayload['transaction_status'] ?? '')));
+        $fraudStatus = strtolower(trim((string) ($corePayload['fraud_status'] ?? '')));
+
+        if ($txStatus === 'settlement' || ($txStatus === 'capture' && $fraudStatus === 'accept')) {
+            $this->synchronizationService->synchronizeFromCoreApiStatus($payment, $corePayload);
+
+            throw MidtransPaymentException::alreadyPaid(
+                'Pembayaran sebelumnya telah berhasil dikonfirmasi lunas oleh server Midtrans.'
+            );
+        }
+
+        if ($txStatus === 'capture') {
+            $this->synchronizationService->synchronizeFromCoreApiStatus($payment, $corePayload);
+
+            throw MidtransPaymentException::invalidOrderState(
+                'Pembayaran sebelumnya sedang dalam verifikasi keamanan Midtrans. Silakan cek status pembayaran terlebih dahulu.'
+            );
+        }
+    }
+
+    /**
+     * @param  Collection<int, Payment>  $existingPayments
+     * @param  array<int, array{reason: string, payload: array<string, mixed>}>  $supersedeResults
+     */
+    protected function applySupersededPaymentTransitions(
+        Collection $existingPayments,
+        Order $lockedOrder,
+        Customer $lockedCustomer,
+        array $supersedeResults
+    ): void {
+        foreach ($existingPayments as $payment) {
+            if (! isset($supersedeResults[$payment->id]) || $payment->status !== 'pending') {
+                continue;
+            }
+
+            $info = $supersedeResults[$payment->id];
+            $payload = $info['payload'];
+            unset($payload['signature_key']);
+
+            $transactionId = is_string($payload['transaction_id'] ?? null) && trim($payload['transaction_id']) !== ''
+                ? mb_substr(trim($payload['transaction_id']), 0, 120, 'UTF-8')
+                : $payment->midtrans_transaction_id;
+
+            $paymentType = is_string($payload['payment_type'] ?? null) && trim($payload['payment_type']) !== ''
+                ? mb_substr(strtolower(trim($payload['payment_type'])), 0, 60, 'UTF-8')
+                : $payment->payment_type;
+
+            $payment->status = 'cancel';
+            if ($transactionId !== null) {
+                $payment->midtrans_transaction_id = $transactionId;
+            }
+            if ($paymentType !== null) {
+                $payment->payment_type = $paymentType;
+            }
+            $payment->save();
+
+            PaymentTransaction::create([
+                'payment_id' => $payment->id,
+                'transaction_id' => $transactionId,
+                'event_type' => 'payment_method_switched',
+                'status' => 'cancel',
+                'gross_amount' => $payment->gross_amount,
+                'payment_type' => $paymentType,
+                'signature_verified' => true,
+                'raw_payload' => $payload,
+                'occurred_at' => now(),
+            ]);
+
+            AuditLogService::record(
+                'customer',
+                $lockedCustomer->id,
+                'payment.method_switched',
+                "Membatalkan sesi pembayaran {$payment->midtrans_order_id} untuk mengganti metode pembayaran pesanan {$lockedOrder->order_number}.",
+                $payment,
+                [
+                    'order_id' => $lockedOrder->id,
+                    'order_number' => $lockedOrder->order_number,
+                    'midtrans_order_id' => $payment->midtrans_order_id,
+                    'reason' => $info['reason'],
+                ]
+            );
+        }
     }
 }

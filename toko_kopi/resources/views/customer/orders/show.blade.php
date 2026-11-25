@@ -373,19 +373,47 @@
                 </span>
             </div>
 
-            @if($order->latestPayment)
-                <div class="rounded-3 bg-mlm-secondary border border-success-subtle p-3 small mb-3">
+            @if(! empty($paymentUi['can_pay']) || $order->latestPayment)
+                <div
+                    x-data="{
+                        midtransOrderId: @js($order->latestPayment?->midtrans_order_id ?? ''),
+                        expiredAtLabel: @js($order->latestPayment?->expired_at ? $order->latestPayment->expired_at->timezone('Asia/Jakarta')->format('d M Y, H:i').' WIB' : ''),
+                        initiateUrl: @js($paymentUi['initiate_url'] ?? ''),
+                        formatWib(iso) {
+                            if (!iso) return '';
+                            try {
+                                const d = new Date(iso);
+                                if (Number.isNaN(d.getTime())) return '';
+                                const parts = new Intl.DateTimeFormat('id-ID', {
+                                    timeZone: 'Asia/Jakarta',
+                                    day: '2-digit',
+                                    month: 'short',
+                                    year: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    hour12: false,
+                                }).formatToParts(d);
+                                const get = (t) => parts.find((p) => p.type === t)?.value || '';
+                                return `${get('day')} ${get('month')} ${get('year')}, ${get('hour')}:${get('minute')} WIB`;
+                            } catch (e) {
+                                return '';
+                            }
+                        }
+                    }"
+                    @order-payment-updated.window="if ($event.detail && initiateUrl !== '' && $event.detail.initiateUrl === initiateUrl) { midtransOrderId = $event.detail.midtransOrderId || midtransOrderId; const formatted = formatWib($event.detail.expiredAt); if (formatted) expiredAtLabel = formatted; }"
+                    x-show="midtransOrderId !== ''"
+                    x-cloak
+                    class="rounded-3 bg-mlm-secondary border border-success-subtle p-3 small mb-3"
+                >
                     <div class="fw-semibold text-mlm-primary mb-1">
                         <i class="bi bi-shield-check me-1" aria-hidden="true"></i> Referensi Pembayaran
                     </div>
                     <div class="text-mlm-muted">
-                        Kode Transaksi: <span class="fw-semibold text-body">{{ $order->latestPayment->midtrans_order_id }}</span>
+                        Kode Transaksi: <span class="fw-semibold text-body" x-text="midtransOrderId">{{ $order->latestPayment?->midtrans_order_id }}</span>
                     </div>
-                    @if($order->latestPayment->expired_at)
-                        <div class="text-mlm-muted mt-1">
-                            Berlaku hingga: {{ $order->latestPayment->expired_at->timezone('Asia/Jakarta')->format('d M Y, H:i') }} WIB
-                        </div>
-                    @endif
+                    <div x-show="expiredAtLabel !== ''" x-cloak class="text-mlm-muted mt-1">
+                        Berlaku hingga: <span x-text="expiredAtLabel">{{ $order->latestPayment?->expired_at ? $order->latestPayment->expired_at->timezone('Asia/Jakarta')->format('d M Y, H:i').' WIB' : '' }}</span>
+                    </div>
                 </div>
             @endif
 
@@ -406,8 +434,8 @@
                         type="button"
                         class="btn btn-primary w-100 fw-semibold"
                         style="min-height: 44px;"
-                        :disabled="loading || refreshing || checkingStatus"
-                        @click="startPayment()"
+                        :disabled="loading || switchingMethod || refreshing || checkingStatus"
+                        @click="startPayment(false)"
                     >
                         <span x-show="!loading">
                             <i class="bi bi-credit-card me-1" aria-hidden="true"></i>
@@ -419,12 +447,33 @@
                         </span>
                     </button>
 
-                    @if($order->latestPayment !== null)
+                    <div x-show="hasPaymentAttempt" x-cloak>
+                        <button
+                            type="button"
+                            class="btn btn-outline-secondary w-100 fw-semibold mt-2"
+                            style="min-height: 44px;"
+                            :disabled="loading || switchingMethod || refreshing || checkingStatus"
+                            @click="startPayment(true)"
+                        >
+                            <span x-show="!switchingMethod">
+                                <span class="d-inline-flex align-items-center justify-content-center gap-1">
+                                    <i class="bi bi-arrow-left-right" aria-hidden="true"></i>
+                                    <span>Ganti Metode Pembayaran</span>
+                                </span>
+                            </span>
+                            <span x-show="switchingMethod" x-cloak>
+                                <span class="d-inline-flex align-items-center justify-content-center gap-1">
+                                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                    <span>Menyiapkan Pilihan Baru...</span>
+                                </span>
+                            </span>
+                        </button>
+
                         <button
                             type="button"
                             class="btn btn-outline-primary w-100 fw-semibold mt-2"
                             style="min-height: 44px;"
-                            :disabled="loading || refreshing || checkingStatus"
+                            :disabled="loading || switchingMethod || refreshing || checkingStatus"
                             @click="checkPaymentStatus()"
                         >
                             <span x-show="!checkingStatus">
@@ -440,7 +489,7 @@
                                 </span>
                             </span>
                         </button>
-                    @endif
+                    </div>
 
                     <p class="small text-mlm-muted mt-2 mb-0">
                         Status pembayaran resmi selalu diverifikasi ulang oleh server setelah Anda menyelesaikan transaksi di jendela Midtrans.

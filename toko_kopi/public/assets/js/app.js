@@ -196,8 +196,11 @@ document.addEventListener('alpine:init', () => {
     statusCheckUrl: config.statusCheckUrl || null,
     refreshUrl: config.refreshUrl || window.location.href,
     loading: false,
+    switchingMethod: false,
     checkingStatus: false,
     refreshing: false,
+    hasPaymentAttempt: Boolean(config.hasPaymentAttempt),
+    latestMidtransOrderId: config.latestMidtransOrderId || '',
     feedbackMessage: '',
     feedbackType: 'info',
 
@@ -245,7 +248,7 @@ document.addEventListener('alpine:init', () => {
     },
 
     async checkPaymentStatus() {
-      if (this.loading || this.refreshing || this.checkingStatus || !this.statusCheckUrl) {
+      if (this.loading || this.switchingMethod || this.refreshing || this.checkingStatus || !this.statusCheckUrl) {
         return;
       }
 
@@ -332,17 +335,22 @@ document.addEventListener('alpine:init', () => {
       } else if (mode === 'close') {
         this.setFeedback(
           'warning',
-          'Jendela pembayaran ditutup sebelum selesai. Jika Anda sudah membayar, tekan tombol Cek Status Pembayaran.'
+          'Jendela pembayaran ditutup sebelum selesai. Klik Bayar Sekarang untuk melanjutkan, Ganti Metode Pembayaran untuk memilih kanal lain, atau Cek Status Pembayaran jika sudah membayar.'
         );
       }
     },
 
-    async startPayment() {
-      if (this.loading || this.refreshing || this.checkingStatus || !this.initiateUrl) {
+    async startPayment(forceNew = false) {
+      if (this.loading || this.switchingMethod || this.refreshing || this.checkingStatus || !this.initiateUrl) {
         return;
       }
 
-      this.loading = true;
+      const isSwitch = Boolean(forceNew);
+      if (isSwitch) {
+        this.switchingMethod = true;
+      } else {
+        this.loading = true;
+      }
       this.feedbackMessage = '';
 
       try {
@@ -354,12 +362,24 @@ document.addEventListener('alpine:init', () => {
             'X-CSRF-TOKEN': this.csrfToken(),
             'X-Requested-With': 'XMLHttpRequest',
           },
-          body: JSON.stringify({}),
+          body: JSON.stringify(isSwitch ? { force_new: true } : {}),
         });
 
         const payload = await response.json().catch(() => null);
 
         if (!response.ok || !payload || !payload.success || !payload.data || !payload.data.snap_token) {
+          if (payload?.error_code === 'payment_already_paid') {
+            this.refreshing = true;
+            this.setFeedback(
+              'success',
+              payload.message || 'Pembayaran telah dikonfirmasi lunas. Memuat ulang halaman...'
+            );
+            window.setTimeout(() => {
+              window.location.assign(this.refreshUrl);
+            }, 700);
+            return;
+          }
+
           const message =
             payload && payload.message
               ? payload.message
@@ -367,6 +387,21 @@ document.addEventListener('alpine:init', () => {
           this.setFeedback('danger', message);
           return;
         }
+
+        this.hasPaymentAttempt = true;
+        if (payload.data.midtrans_order_id) {
+          this.latestMidtransOrderId = payload.data.midtrans_order_id;
+        }
+
+        window.dispatchEvent(
+          new CustomEvent('order-payment-updated', {
+            detail: {
+              initiateUrl: this.initiateUrl,
+              midtransOrderId: payload.data.midtrans_order_id || '',
+              expiredAt: payload.data.expired_at || null,
+            },
+          })
+        );
 
         if (!window.snap || typeof window.snap.pay !== 'function') {
           this.setFeedback(
@@ -386,7 +421,7 @@ document.addEventListener('alpine:init', () => {
           onError: () => {
             this.setFeedback(
               'danger',
-              'Terjadi kendala pada jendela pembayaran Midtrans. Anda dapat menekan tombol Bayar Sekarang untuk mencoba lagi.'
+              'Terjadi kendala pada jendela pembayaran Midtrans. Anda dapat menekan Bayar Sekarang atau Ganti Metode Pembayaran untuk mencoba lagi.'
             );
           },
           onClose: () => {
@@ -400,6 +435,7 @@ document.addEventListener('alpine:init', () => {
         );
       } finally {
         this.loading = false;
+        this.switchingMethod = false;
       }
     },
   }));

@@ -8,6 +8,8 @@ use App\Models\Order;
 use App\Models\OrderStatusHistory;
 use App\Models\Payment;
 use App\Models\PaymentTransaction;
+use App\Models\Product;
+use App\Models\StockReservation;
 use App\Services\Payment\MidtransClient;
 use App\Services\Payment\MidtransPaymentException;
 use App\Services\Setting\StoreSettingService;
@@ -743,5 +745,295 @@ class CustomerMidtransPaymentTest extends TestCase
             ->assertStatus(200)
             ->assertDontSee('Bayar Sekarang')
             ->assertDontSee('Sudah Bayar? Cek Status Pembayaran');
+    }
+
+    public function test_customer_can_switch_payment_method_cancels_previous_midtrans_attempt_and_preserves_reservation(): void
+    {
+        $this->configureMidtrans();
+
+        $customer = $this->createCustomer();
+        $product = Product::create([
+            'sku' => 'KOPI-SWITCH-01',
+            'name' => 'Kopi Gayo Switch Test',
+            'slug' => 'kopi-gayo-switch-test',
+            'description' => 'Kopi arabika untuk uji ganti metode pembayaran.',
+            'price' => 175000,
+            'cost_price' => 90000,
+            'stock' => 10,
+            'reserved_stock' => 1,
+            'weight_grams' => 500,
+            'is_active' => true,
+            'has_variants' => false,
+        ]);
+
+        $order = $this->createOrderForCustomer($customer, [
+            'order_status' => 'awaiting_payment',
+            'payment_status' => 'unpaid',
+        ]);
+
+        $reservation = StockReservation::create([
+            'order_id' => $order->id,
+            'product_id' => $product->id,
+            'product_variant_id' => null,
+            'quantity' => 1,
+            'status' => 'active',
+            'expires_at' => $order->payment_due_at,
+        ]);
+
+        $p1 = Payment::create([
+            'order_id' => $order->id,
+            'payment_gateway' => 'midtrans',
+            'midtrans_order_id' => $order->order_number.'-P1-QRIS01',
+            'snap_token' => 'snap-token-p1-qris',
+            'snap_redirect_url' => 'https://app.sandbox.midtrans.com/snap/v2/vtweb/snap-token-p1-qris',
+            'gross_amount' => 175000,
+            'status' => 'pending',
+            'expired_at' => now()->addHours(6),
+        ]);
+
+        Http::fake([
+            'https://api.sandbox.midtrans.com/v2/'.$p1->midtrans_order_id.'/status' => Http::response([
+                'status_code' => '200',
+                'transaction_id' => 'trx-qris-p1-locked',
+                'order_id' => $p1->midtrans_order_id,
+                'gross_amount' => '175000.00',
+                'payment_type' => 'qris',
+                'transaction_status' => 'pending',
+            ], 200),
+            'https://api.sandbox.midtrans.com/v2/'.$p1->midtrans_order_id.'/cancel' => Http::response([
+                'status_code' => '200',
+                'transaction_id' => 'trx-qris-p1-locked',
+                'order_id' => $p1->midtrans_order_id,
+                'gross_amount' => '175000.00',
+                'payment_type' => 'qris',
+                'transaction_status' => 'cancel',
+            ], 200),
+            'https://app.sandbox.midtrans.com/snap/v1/transactions' => Http::response([
+                'token' => 'snap-token-p2-fresh',
+                'redirect_url' => 'https://app.sandbox.midtrans.com/snap/v2/vtweb/snap-token-p2-fresh',
+            ], 201),
+        ]);
+
+        $switchResponse = $this->actingAs($customer, 'customer')
+            ->postJson(route('customer.orders.payment.initiate', $order), [
+                'force_new' => true,
+            ]);
+
+        $switchResponse->assertStatus(201)
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.reused_token', false)
+            ->assertJsonPath('data.snap_token', 'snap-token-p2-fresh')
+            ->assertJsonPath('data.order_status', 'awaiting_payment')
+            ->assertJsonPath('data.payment_status', 'unpaid');
+
+        $p2MidtransId = (string) $switchResponse->json('data.midtrans_order_id');
+        $this->assertNotSame($p1->midtrans_order_id, $p2MidtransId);
+        $this->assertStringStartsWith($order->order_number.'-P2-', $p2MidtransId);
+        $this->assertStringNotContainsString(self::TEST_SERVER_KEY, $switchResponse->getContent());
+
+        $this->assertSame('cancel', $p1->fresh()->status);
+        $this->assertSame('qris', $p1->fresh()->payment_type);
+        $this->assertTrue(PaymentTransaction::where('payment_id', $p1->id)
+            ->where('event_type', 'payment_method_switched')
+            ->where('status', 'cancel')
+            ->exists());
+        $this->assertTrue(ActivityLog::where('action', 'payment.method_switched')
+            ->where('subject_id', $p1->id)
+            ->exists());
+
+        $p2 = Payment::where('order_id', $order->id)->orderByDesc('id')->firstOrFail();
+        $this->assertSame('pending', $p2->status);
+        $this->assertSame('snap-token-p2-fresh', $p2->snap_token);
+
+        // Reservasi stok & status order tetap aktif
+        $this->assertSame('active', $reservation->fresh()->status);
+        $this->assertSame(1, (int) $product->fresh()->reserved_stock);
+
+        // Klik Bayar Sekarang standar berikutnya tetap me-reuse P2
+        $reuseResponse = $this->actingAs($customer, 'customer')
+            ->postJson(route('customer.orders.payment.initiate', $order));
+        $reuseResponse->assertStatus(200)
+            ->assertJsonPath('data.reused_token', true)
+            ->assertJsonPath('data.snap_token', 'snap-token-p2-fresh')
+            ->assertJsonPath('data.midtrans_order_id', $p2MidtransId);
+
+        Http::assertSentCount(3);
+
+        // Halaman detail menampilkan tombol Ganti Metode Pembayaran
+        $this->actingAs($customer, 'customer')
+            ->get(route('customer.orders.show', $order))
+            ->assertStatus(200)
+            ->assertSee('Bayar Sekarang')
+            ->assertSee('Ganti Metode Pembayaran');
+    }
+
+    public function test_switching_payment_method_when_midtrans_returns_404_creates_new_token_without_cancel_request(): void
+    {
+        $this->configureMidtrans();
+
+        $customer = $this->createCustomer();
+        $order = $this->createOrderForCustomer($customer, [
+            'order_status' => 'awaiting_payment',
+            'payment_status' => 'unpaid',
+        ]);
+
+        $p1 = Payment::create([
+            'order_id' => $order->id,
+            'payment_gateway' => 'midtrans',
+            'midtrans_order_id' => $order->order_number.'-P1-OPEN01',
+            'snap_token' => 'snap-token-p1-open',
+            'gross_amount' => 175000,
+            'status' => 'pending',
+            'expired_at' => now()->addHours(6),
+        ]);
+
+        Http::fake([
+            'https://api.sandbox.midtrans.com/v2/'.$p1->midtrans_order_id.'/status' => Http::response([
+                'status_code' => '404',
+                'status_message' => "Transaction doesn't exist.",
+            ], 404),
+            'https://app.sandbox.midtrans.com/snap/v1/transactions' => Http::response([
+                'token' => 'snap-token-p2-after-404',
+                'redirect_url' => 'https://app.sandbox.midtrans.com/snap/v2/vtweb/snap-token-p2-after-404',
+            ], 201),
+        ]);
+
+        $res = $this->actingAs($customer, 'customer')
+            ->postJson(route('customer.orders.payment.initiate', $order), [
+                'force_new' => true,
+            ]);
+
+        $res->assertStatus(201)
+            ->assertJsonPath('data.reused_token', false)
+            ->assertJsonPath('data.snap_token', 'snap-token-p2-after-404');
+
+        $this->assertSame('cancel', $p1->fresh()->status);
+        $this->assertSame(2, Payment::where('order_id', $order->id)->count());
+        Http::assertSentCount(2);
+    }
+
+    public function test_switching_payment_method_syncs_and_blocks_duplicate_payment_if_previous_attempt_already_settled(): void
+    {
+        $this->configureMidtrans();
+
+        $customer = $this->createCustomer();
+        $product = Product::create([
+            'sku' => 'KOPI-PAID-GUARD-01',
+            'name' => 'Kopi Toraja Paid Guard',
+            'slug' => 'kopi-toraja-paid-guard',
+            'description' => 'Produk untuk uji pencegahan pembayaran ganda saat ganti metode.',
+            'price' => 175000,
+            'cost_price' => 95000,
+            'stock' => 10,
+            'reserved_stock' => 1,
+            'weight_grams' => 500,
+            'is_active' => true,
+            'has_variants' => false,
+        ]);
+
+        $order = $this->createOrderForCustomer($customer, [
+            'order_status' => 'awaiting_payment',
+            'payment_status' => 'pending',
+        ]);
+
+        $reservation = StockReservation::create([
+            'order_id' => $order->id,
+            'product_id' => $product->id,
+            'product_variant_id' => null,
+            'quantity' => 1,
+            'status' => 'active',
+            'expires_at' => $order->payment_due_at,
+        ]);
+
+        $p1 = Payment::create([
+            'order_id' => $order->id,
+            'payment_gateway' => 'midtrans',
+            'midtrans_order_id' => $order->order_number.'-P1-PAID01',
+            'snap_token' => 'snap-token-p1-paid',
+            'gross_amount' => 175000,
+            'status' => 'pending',
+            'expired_at' => now()->addHours(6),
+        ]);
+
+        Http::fake([
+            'https://api.sandbox.midtrans.com/v2/'.$p1->midtrans_order_id.'/status' => Http::response([
+                'status_code' => '200',
+                'transaction_id' => 'trx-already-settled-01',
+                'order_id' => $p1->midtrans_order_id,
+                'gross_amount' => '175000.00',
+                'payment_type' => 'qris',
+                'transaction_status' => 'settlement',
+                'fraud_status' => 'accept',
+                'transaction_time' => '2026-11-25 10:00:00',
+                'settlement_time' => '2026-11-25 10:01:00',
+            ], 200),
+        ]);
+
+        $res = $this->actingAs($customer, 'customer')
+            ->postJson(route('customer.orders.payment.initiate', $order), [
+                'force_new' => true,
+            ]);
+
+        $res->assertStatus(422)
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('error_code', 'payment_already_paid');
+
+        Http::assertSentCount(1);
+        $this->assertSame(1, Payment::where('order_id', $order->id)->count());
+        $this->assertSame('settlement', $p1->fresh()->status);
+        $this->assertSame('paid', $order->fresh()->payment_status);
+        $this->assertSame('paid', $order->fresh()->order_status);
+        $this->assertSame('committed', $reservation->fresh()->status);
+        $this->assertSame(9, (int) $product->fresh()->stock);
+        $this->assertSame(0, (int) $product->fresh()->reserved_stock);
+    }
+
+    public function test_switching_payment_method_fails_closed_when_midtrans_cancel_fails_without_leaking_secrets(): void
+    {
+        $this->configureMidtrans();
+
+        $customer = $this->createCustomer();
+        $order = $this->createOrderForCustomer($customer, [
+            'order_status' => 'awaiting_payment',
+            'payment_status' => 'pending',
+        ]);
+
+        $p1 = Payment::create([
+            'order_id' => $order->id,
+            'payment_gateway' => 'midtrans',
+            'midtrans_order_id' => $order->order_number.'-P1-ERR01',
+            'snap_token' => 'snap-token-p1-err',
+            'gross_amount' => 175000,
+            'status' => 'pending',
+            'expired_at' => now()->addHours(6),
+        ]);
+
+        Http::fake([
+            'https://api.sandbox.midtrans.com/v2/'.$p1->midtrans_order_id.'/status' => Http::response([
+                'status_code' => '200',
+                'transaction_id' => 'trx-err-pending-01',
+                'order_id' => $p1->midtrans_order_id,
+                'gross_amount' => '175000.00',
+                'payment_type' => 'bank_transfer',
+                'transaction_status' => 'pending',
+            ], 200),
+            'https://api.sandbox.midtrans.com/v2/'.$p1->midtrans_order_id.'/cancel' => Http::response([
+                'status_message' => 'Internal error server_key='.self::TEST_SERVER_KEY,
+            ], 500),
+        ]);
+
+        $res = $this->actingAs($customer, 'customer')
+            ->postJson(route('customer.orders.payment.initiate', $order), [
+                'force_new' => true,
+            ]);
+
+        $res->assertStatus(503)
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('error_code', 'midtrans_upstream_unavailable');
+
+        $this->assertStringNotContainsString(self::TEST_SERVER_KEY, $res->getContent());
+        $this->assertSame('pending', $p1->fresh()->status);
+        $this->assertSame(1, Payment::where('order_id', $order->id)->count());
+        Http::assertSentCount(2);
     }
 }

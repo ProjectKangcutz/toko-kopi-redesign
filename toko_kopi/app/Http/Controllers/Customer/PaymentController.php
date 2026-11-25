@@ -25,8 +25,10 @@ class PaymentController extends Controller
 
         Gate::forUser($customer)->authorize('view', $order);
 
+        $forceNew = $request->boolean('force_new');
+
         try {
-            $result = $this->paymentInitiationService->initiateForOrder($customer, $order);
+            $result = $this->paymentInitiationService->initiateForOrder($customer, $order, $forceNew);
         } catch (MidtransPaymentException $e) {
             return response()->json([
                 'success' => false,

@@ -84,8 +84,8 @@
                                         type="button"
                                         class="btn btn-primary btn-sm px-3"
                                         style="min-height: 44px;"
-                                        :disabled="loading || refreshing"
-                                        @click="startPayment()"
+                                        :disabled="loading || switchingMethod || refreshing || checkingStatus"
+                                        @click="startPayment(false)"
                                     >
                                         <span x-show="!loading">
                                             <span class="d-inline-flex align-items-center gap-1">
@@ -100,6 +100,28 @@
                                             </span>
                                         </span>
                                     </button>
+                                    <template x-if="hasPaymentAttempt">
+                                        <button
+                                            type="button"
+                                            class="btn btn-outline-secondary btn-sm px-3"
+                                            style="min-height: 44px;"
+                                            :disabled="loading || switchingMethod || refreshing || checkingStatus"
+                                            @click="startPayment(true)"
+                                        >
+                                            <span x-show="!switchingMethod">
+                                                <span class="d-inline-flex align-items-center gap-1">
+                                                    <i class="bi bi-arrow-left-right" aria-hidden="true"></i>
+                                                    <span>Ganti Metode</span>
+                                                </span>
+                                            </span>
+                                            <span x-show="switchingMethod" x-cloak>
+                                                <span class="d-inline-flex align-items-center gap-1">
+                                                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                                    <span>Mengganti...</span>
+                                                </span>
+                                            </span>
+                                        </button>
+                                    </template>
                                 </div>
                                 <div
                                     x-show="feedbackMessage"
