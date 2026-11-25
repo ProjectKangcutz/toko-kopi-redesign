@@ -351,50 +351,117 @@ class MidtransClient
             throw MidtransPaymentException::invalidOrderState('Referensi midtrans_order_id tidak boleh kosong.');
         }
 
+        return $this->postEmptyJsonAction(
+            endpoint: '/v2/'.rawurlencode($normalizedOrderId).'/cancel',
+            logEndpoint: '/v2/{order_id}/cancel',
+            midtransOrderId: $normalizedOrderId,
+            useSnapHost: false,
+            timeoutMessage: 'Koneksi ke Midtrans Core API timeout saat membatalkan transaksi sebelumnya.',
+            unexpectedMessage: 'Kesalahan client saat membatalkan transaksi Midtrans sebelumnya.',
+        );
+    }
+
+    /**
+     * Mengakhiri masa berlaku transaksi Midtrans yang masih pending melalui Core API /v2/{order_id}/expire.
+     *
+     * @return array<string, mixed>
+     */
+    public function expireTransaction(string $midtransOrderId): array
+    {
+        $normalizedOrderId = trim($midtransOrderId);
+        if ($normalizedOrderId === '') {
+            throw MidtransPaymentException::invalidOrderState('Referensi midtrans_order_id tidak boleh kosong.');
+        }
+
+        return $this->postEmptyJsonAction(
+            endpoint: '/v2/'.rawurlencode($normalizedOrderId).'/expire',
+            logEndpoint: '/v2/{order_id}/expire',
+            midtransOrderId: $normalizedOrderId,
+            useSnapHost: false,
+            timeoutMessage: 'Koneksi ke Midtrans Core API timeout saat mengakhiri transaksi sebelumnya.',
+            unexpectedMessage: 'Kesalahan client saat mengakhiri transaksi Midtrans sebelumnya.',
+        );
+    }
+
+    /**
+     * Membatalkan sesi halaman Snap melalui POST /snap/v1/transactions/{token}/cancel
+     * sesuai dokumentasi Midtrans Snap Advanced Feature.
+     *
+     * @return array<string, mixed>
+     */
+    public function cancelSnapSession(string $snapToken): array
+    {
+        $normalizedToken = trim($snapToken);
+        if ($normalizedToken === '') {
+            throw MidtransPaymentException::invalidOrderState('Token Snap tidak boleh kosong.');
+        }
+
+        return $this->postEmptyJsonAction(
+            endpoint: '/snap/v1/transactions/'.rawurlencode($normalizedToken).'/cancel',
+            logEndpoint: '/snap/v1/transactions/{token}/cancel',
+            midtransOrderId: 'snap_token',
+            useSnapHost: true,
+            timeoutMessage: 'Koneksi ke Midtrans Snap API timeout saat membatalkan sesi Snap sebelumnya.',
+            unexpectedMessage: 'Kesalahan client saat membatalkan sesi Snap Midtrans sebelumnya.',
+        );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function postEmptyJsonAction(
+        string $endpoint,
+        string $logEndpoint,
+        string $midtransOrderId,
+        bool $useSnapHost,
+        string $timeoutMessage,
+        string $unexpectedMessage,
+    ): array {
         $config = $this->resolveConfig();
-        $baseUrl = $this->coreApiBaseUrl($config['is_production']);
-        $endpoint = '/v2/'.rawurlencode($normalizedOrderId).'/cancel';
+        $baseUrl = $useSnapHost
+            ? $this->snapApiBaseUrl($config['is_production'])
+            : $this->coreApiBaseUrl($config['is_production']);
 
         try {
-            // Core API /v2/{order_id}/cancel harus dikirim tanpa body JSON array ([]).
             $response = Http::baseUrl($baseUrl)
                 ->acceptJson()
                 ->withBasicAuth($config['server_key'], '')
+                ->withBody('', 'application/json')
                 ->connectTimeout(5)
                 ->timeout(15)
                 ->post($endpoint);
         } catch (ConnectionException $e) {
             $sanitizedError = $this->sanitizeDiagnosticMessage($e->getMessage(), $config['server_key'])
-                ?? 'Koneksi ke Midtrans Core API timeout saat membatalkan transaksi sebelumnya.';
+                ?? $timeoutMessage;
 
-            Log::channel('payment')->warning('Midtrans cancel transaction connection/timeout failure.', [
-                'endpoint' => '/v2/{order_id}/cancel',
+            Log::channel('payment')->warning('Midtrans action connection/timeout failure.', [
+                'endpoint' => $logEndpoint,
                 'environment' => $config['is_production'] ? 'production' : 'sandbox',
-                'midtrans_order_id' => $normalizedOrderId,
+                'midtrans_order_id' => $midtransOrderId,
                 'exception' => $e::class,
                 'detail' => $sanitizedError,
             ]);
 
             throw MidtransPaymentException::timeout([
                 'category' => 'connection_or_timeout',
-                'endpoint' => '/v2/{order_id}/cancel',
+                'endpoint' => $logEndpoint,
                 'upstream_message' => $sanitizedError,
             ]);
         } catch (Throwable $e) {
             $sanitizedError = $this->sanitizeDiagnosticMessage($e->getMessage(), $config['server_key'])
-                ?? 'Kesalahan client saat membatalkan transaksi Midtrans sebelumnya.';
+                ?? $unexpectedMessage;
 
-            Log::channel('payment')->warning('Midtrans cancel transaction unexpected client failure.', [
-                'endpoint' => '/v2/{order_id}/cancel',
+            Log::channel('payment')->warning('Midtrans action unexpected client failure.', [
+                'endpoint' => $logEndpoint,
                 'environment' => $config['is_production'] ? 'production' : 'sandbox',
-                'midtrans_order_id' => $normalizedOrderId,
+                'midtrans_order_id' => $midtransOrderId,
                 'exception' => $e::class,
                 'detail' => $sanitizedError,
             ]);
 
             throw MidtransPaymentException::upstreamUnavailable([
                 'category' => 'client_exception',
-                'endpoint' => '/v2/{order_id}/cancel',
+                'endpoint' => $logEndpoint,
                 'upstream_message' => $sanitizedError,
             ]);
         }
@@ -402,12 +469,12 @@ class MidtransClient
         if ($response->failed()) {
             $status = $response->status();
             $sanitizedError = $this->extractSanitizedErrorMessage($response, $config['server_key'])
-                ?? ('Midtrans cancel API mengembalikan HTTP '.$status.'.');
+                ?? ('Midtrans API mengembalikan HTTP '.$status.'.');
 
-            Log::channel('payment')->warning('Midtrans cancel API HTTP error.', [
-                'endpoint' => '/v2/{order_id}/cancel',
+            Log::channel('payment')->warning('Midtrans action HTTP error.', [
+                'endpoint' => $logEndpoint,
                 'environment' => $config['is_production'] ? 'production' : 'sandbox',
-                'midtrans_order_id' => $normalizedOrderId,
+                'midtrans_order_id' => $midtransOrderId,
                 'http_status' => $status,
                 'detail' => $sanitizedError,
             ]);
@@ -415,36 +482,36 @@ class MidtransClient
             throw MidtransPaymentException::upstreamUnavailable([
                 'category' => $this->classifyHttpFailure($status),
                 'http_status' => $status,
-                'endpoint' => '/v2/{order_id}/cancel',
+                'endpoint' => $logEndpoint,
                 'upstream_message' => $sanitizedError,
             ]);
         }
 
         $decoded = $response->json();
         if (! is_array($decoded)) {
-            Log::channel('payment')->warning('Midtrans cancel API returned non-JSON response.', [
-                'endpoint' => '/v2/{order_id}/cancel',
+            Log::channel('payment')->warning('Midtrans action returned non-JSON response.', [
+                'endpoint' => $logEndpoint,
                 'environment' => $config['is_production'] ? 'production' : 'sandbox',
-                'midtrans_order_id' => $normalizedOrderId,
+                'midtrans_order_id' => $midtransOrderId,
                 'http_status' => $response->status(),
             ]);
 
             throw MidtransPaymentException::malformedResponse([
                 'category' => 'malformed_non_json',
                 'http_status' => $response->status(),
-                'endpoint' => '/v2/{order_id}/cancel',
+                'endpoint' => $logEndpoint,
             ]);
         }
 
         $embeddedStatus = $this->extractEmbeddedCoreApiErrorStatus($decoded);
         if ($embeddedStatus !== null) {
             $sanitizedError = $this->extractSanitizedErrorMessageFromArray($decoded, $config['server_key'])
-                ?? ('Midtrans cancel API mengembalikan status_code '.$embeddedStatus.'.');
+                ?? ('Midtrans API mengembalikan status_code '.$embeddedStatus.'.');
 
-            Log::channel('payment')->warning('Midtrans cancel API embedded error status_code.', [
-                'endpoint' => '/v2/{order_id}/cancel',
+            Log::channel('payment')->warning('Midtrans action embedded error status_code.', [
+                'endpoint' => $logEndpoint,
                 'environment' => $config['is_production'] ? 'production' : 'sandbox',
-                'midtrans_order_id' => $normalizedOrderId,
+                'midtrans_order_id' => $midtransOrderId,
                 'http_status' => $embeddedStatus,
                 'detail' => $sanitizedError,
             ]);
@@ -452,7 +519,7 @@ class MidtransClient
             throw MidtransPaymentException::upstreamUnavailable([
                 'category' => $this->classifyHttpFailure($embeddedStatus),
                 'http_status' => $embeddedStatus,
-                'endpoint' => '/v2/{order_id}/cancel',
+                'endpoint' => $logEndpoint,
                 'upstream_message' => $sanitizedError,
             ]);
         }

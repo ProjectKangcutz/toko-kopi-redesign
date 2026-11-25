@@ -773,8 +773,8 @@ class PaymentInitiationService
     }
 
     /**
-     * Memverifikasi status transaksi aktif di Midtrans dan membatalkannya sebelum
-     * membuat sesi Snap baru untuk metode pembayaran lain (di luar DB transaction).
+     * Memverifikasi status transaksi aktif di Midtrans dan membatalkannya/mengakhirinya
+     * sebelum membuat sesi Snap baru untuk metode pembayaran lain (di luar DB transaction).
      *
      * @param  Collection<int, Payment>  $pendingPayments
      * @return array<int, array{reason: string, payload: array<string, mixed>}>
@@ -785,7 +785,10 @@ class PaymentInitiationService
 
         foreach ($pendingPayments as $pendingPayment) {
             $midtransOrderId = trim((string) $pendingPayment->midtrans_order_id);
+            $snapToken = trim((string) $pendingPayment->snap_token);
+
             if ($midtransOrderId === '') {
+                $this->cancelSnapSessionBestEffort($snapToken);
                 $results[$pendingPayment->id] = [
                     'reason' => 'not_found_on_midtrans',
                     'payload' => ['reason' => 'missing_midtrans_order_id'],
@@ -795,6 +798,7 @@ class PaymentInitiationService
 
             $corePayload = $this->fetchTransactionStatusOrNull($midtransOrderId);
             if ($corePayload === null) {
+                $this->cancelSnapSessionBestEffort($snapToken);
                 $results[$pendingPayment->id] = [
                     'reason' => 'not_found_on_midtrans',
                     'payload' => [
@@ -815,16 +819,54 @@ class PaymentInitiationService
 
             try {
                 $cancelPayload = $this->midtransClient->cancelTransaction($midtransOrderId);
+
+                $cancelStatus = strtolower(trim((string) ($cancelPayload['transaction_status'] ?? '')));
+                if ($cancelStatus === 'settlement' || $cancelStatus === 'capture') {
+                    $this->guardAgainstPaidOrChallengeStatus($pendingPayment, $cancelPayload);
+                }
+
+                unset($cancelPayload['signature_key']);
+
+                $results[$pendingPayment->id] = [
+                    'reason' => 'cancelled_on_midtrans',
+                    'payload' => $cancelPayload,
+                ];
+                continue;
             } catch (MidtransPaymentException $cancelException) {
-                $httpStatus = $cancelException->diagnostics()['http_status'] ?? null;
-                $category = $cancelException->diagnostics()['category'] ?? null;
+                if ($this->isFatalUpstreamSwitchException($cancelException)) {
+                    throw $cancelException;
+                }
 
-                $isRecoverableCancelRejection = $category === 'upstream_not_found'
-                    || (is_int($httpStatus) && in_array($httpStatus, [400, 406, 412, 422], true));
+                $cancelHttpStatus = $cancelException->diagnostics()['http_status'] ?? null;
+                $cancelCategory = $cancelException->diagnostics()['category'] ?? null;
 
-                if ($isRecoverableCancelRejection) {
+                // Fallback 1: coba Core API /v2/{order_id}/expire jika /cancel ditolak/gagal.
+                try {
+                    $expirePayload = $this->midtransClient->expireTransaction($midtransOrderId);
+
+                    $expireStatus = strtolower(trim((string) ($expirePayload['transaction_status'] ?? '')));
+                    if ($expireStatus === 'settlement' || $expireStatus === 'capture') {
+                        $this->guardAgainstPaidOrChallengeStatus($pendingPayment, $expirePayload);
+                    }
+
+                    unset($expirePayload['signature_key']);
+
+                    $results[$pendingPayment->id] = [
+                        'reason' => 'expired_on_midtrans',
+                        'payload' => $expirePayload,
+                    ];
+                    continue;
+                } catch (MidtransPaymentException $expireException) {
+                    if ($this->isFatalUpstreamSwitchException($expireException)) {
+                        throw $expireException;
+                    }
+
+                    $expireHttpStatus = $expireException->diagnostics()['http_status'] ?? null;
+                    $expireCategory = $expireException->diagnostics()['category'] ?? null;
+
                     $rechecked = $this->fetchTransactionStatusOrNull($midtransOrderId);
                     if ($rechecked === null) {
+                        $this->cancelSnapSessionBestEffort($snapToken);
                         $results[$pendingPayment->id] = [
                             'reason' => 'not_found_on_midtrans',
                             'payload' => [
@@ -843,10 +885,19 @@ class PaymentInitiationService
                         continue;
                     }
 
-                    if ($recheckStatus === 'pending') {
-                        Log::channel('payment')->info('Midtrans tidak mengizinkan pembatalan API langsung untuk kanal pending ini; mengganti sesi pembayaran secara aman.', [
+                    $snapSessionCancelled = $this->cancelSnapSessionBestEffort($snapToken);
+
+                    $isNonOutageRejection = $cancelCategory === 'upstream_not_found'
+                        || $expireCategory === 'upstream_not_found'
+                        || (is_int($cancelHttpStatus) && in_array($cancelHttpStatus, [400, 404, 405, 406, 407, 412, 422], true))
+                        || (is_int($expireHttpStatus) && in_array($expireHttpStatus, [400, 404, 405, 406, 407, 412, 422], true));
+
+                    if ($recheckStatus === 'pending' && ($snapSessionCancelled || $isNonOutageRejection)) {
+                        Log::channel('payment')->info('Mengganti sesi pembayaran pending setelah verifikasi ulang status Midtrans.', [
                             'midtrans_order_id' => $midtransOrderId,
-                            'cancel_http_status' => $httpStatus,
+                            'cancel_http_status' => $cancelHttpStatus,
+                            'expire_http_status' => $expireHttpStatus,
+                            'snap_session_cancelled' => $snapSessionCancelled,
                             'payment_type' => $rechecked['payment_type'] ?? $pendingPayment->payment_type,
                         ]);
 
@@ -854,33 +905,60 @@ class PaymentInitiationService
                         unset($sanitizedRecheck['signature_key']);
 
                         $results[$pendingPayment->id] = [
-                            'reason' => 'superseded_uncancellable_on_midtrans',
+                            'reason' => $snapSessionCancelled
+                                ? 'snap_session_cancelled'
+                                : 'superseded_uncancellable_on_midtrans',
                             'payload' => array_merge($sanitizedRecheck, [
-                                'cancel_http_status' => $httpStatus,
-                                'reason' => 'superseded_uncancellable_on_midtrans',
+                                'cancel_http_status' => $cancelHttpStatus,
+                                'expire_http_status' => $expireHttpStatus,
+                                'snap_session_cancelled' => $snapSessionCancelled,
                             ]),
                         ];
                         continue;
                     }
+
+                    throw $cancelException;
                 }
-
-                throw $cancelException;
             }
-
-            $cancelStatus = strtolower(trim((string) ($cancelPayload['transaction_status'] ?? '')));
-            if ($cancelStatus === 'settlement' || $cancelStatus === 'capture') {
-                $this->guardAgainstPaidOrChallengeStatus($pendingPayment, $cancelPayload);
-            }
-
-            unset($cancelPayload['signature_key']);
-
-            $results[$pendingPayment->id] = [
-                'reason' => 'cancelled_on_midtrans',
-                'payload' => $cancelPayload,
-            ];
         }
 
         return $results;
+    }
+
+    protected function isFatalUpstreamSwitchException(MidtransPaymentException $exception): bool
+    {
+        $category = (string) ($exception->diagnostics()['category'] ?? '');
+        $httpStatus = $exception->diagnostics()['http_status'] ?? null;
+
+        if (in_array($category, ['connection_or_timeout', 'upstream_auth_error', 'upstream_rate_limited'], true)) {
+            return true;
+        }
+
+        return is_int($httpStatus) && in_array($httpStatus, [401, 403, 429], true);
+    }
+
+    protected function cancelSnapSessionBestEffort(string $snapToken): bool
+    {
+        if (trim($snapToken) === '') {
+            return false;
+        }
+
+        try {
+            $this->midtransClient->cancelSnapSession($snapToken);
+
+            return true;
+        } catch (MidtransPaymentException $e) {
+            if ($this->isFatalUpstreamSwitchException($e)) {
+                throw $e;
+            }
+
+            Log::channel('payment')->info('Pembatalan sesi Snap token tidak diperlukan atau dilewati.', [
+                'category' => $e->diagnostics()['category'] ?? null,
+                'http_status' => $e->diagnostics()['http_status'] ?? null,
+            ]);
+
+            return false;
+        }
     }
 
     /**

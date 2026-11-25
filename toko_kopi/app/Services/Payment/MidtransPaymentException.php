@@ -154,8 +154,21 @@ class MidtransPaymentException extends RuntimeException
      */
     public static function upstreamUnavailable(array $diagnostics = []): self
     {
+        $category = (string) ($diagnostics['category'] ?? '');
+        $httpStatus = $diagnostics['http_status'] ?? null;
+
+        if ($category === 'upstream_auth_error') {
+            $message = 'Autentikasi layanan pembayaran Midtrans ditolak'
+                .(is_int($httpStatus) ? " (HTTP {$httpStatus})" : '')
+                .'. Pastikan konfigurasi Server Key sesuai mode Sandbox/Production.';
+        } elseif (is_int($httpStatus) && $httpStatus >= 400) {
+            $message = "Layanan pembayaran Midtrans mengembalikan kendala (HTTP {$httpStatus}). Silakan coba lagi nanti.";
+        } else {
+            $message = 'Layanan pembayaran Midtrans sedang tidak dapat dihubungi. Silakan coba lagi nanti.';
+        }
+
         return new self(
-            'Layanan pembayaran Midtrans sedang tidak dapat dihubungi. Silakan coba lagi nanti.',
+            $message,
             503,
             'midtrans_upstream_unavailable',
             $diagnostics
