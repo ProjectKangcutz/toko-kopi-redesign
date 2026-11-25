@@ -75,20 +75,22 @@
                 <div
                     x-show="addressFeedback"
                     x-cloak
-                    class="alert d-flex align-items-center justify-content-between gap-2 mb-0 small"
+                    class="alert mb-0 small"
                     :class="addressFeedbackType === 'error' ? 'alert-danger' : 'alert-success'"
                     role="status"
                     aria-live="polite"
                 >
-                    <div class="d-flex align-items-center gap-2">
-                        <i
-                            class="bi"
-                            :class="addressFeedbackType === 'error' ? 'bi-exclamation-triangle-fill' : 'bi-check-circle-fill'"
-                            aria-hidden="true"
-                        ></i>
-                        <span x-text="addressFeedback"></span>
+                    <div class="d-flex align-items-center justify-content-between gap-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <i
+                                class="bi"
+                                :class="addressFeedbackType === 'error' ? 'bi-exclamation-triangle-fill' : 'bi-check-circle-fill'"
+                                aria-hidden="true"
+                            ></i>
+                            <span x-text="addressFeedback"></span>
+                        </div>
+                        <button type="button" class="btn-close btn-sm" aria-label="Tutup pemberitahuan" @click="addressFeedback = ''"></button>
                     </div>
-                    <button type="button" class="btn-close btn-sm" aria-label="Tutup pemberitahuan" @click="addressFeedback = ''"></button>
                 </div>
 
                 {{-- 1. Pemilihan & Pengelolaan Alamat Pengiriman --}}
@@ -212,36 +214,38 @@
 
                         {{-- SSR Initial Fallback sebelum Alpine aktif --}}
                         @if(count($addresses) > 0)
-                            <div x-show="!hydrated" class="d-flex flex-column gap-2">
-                                @foreach($addresses as $address)
-                                    <div class="kn-address-option-card {{ $selectedAddress && (int) $selectedAddress->id === (int) $address['id'] ? 'is-selected' : '' }}">
-                                        <div class="mlm-checkout-option">
-                                            <div class="d-flex align-items-start gap-3">
-                                                <span class="mlm-checkout-radio-dot mt-1" aria-hidden="true"></span>
-                                                <div class="flex-grow-1 min-w-0">
-                                                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-1">
-                                                        <div class="d-flex flex-wrap align-items-center gap-2">
-                                                            <span class="fw-bold">{{ $address['label'] }}</span>
-                                                            @if($address['is_primary'])
-                                                                <span class="badge bg-mlm-secondary text-mlm-primary border border-success-subtle">
-                                                                    Alamat Utama
-                                                                </span>
-                                                            @endif
-                                                            @if(! $address['has_valid_region'])
-                                                                <span class="badge text-bg-warning">Perlu Pilih Wilayah</span>
-                                                            @endif
+                            <div x-show="!hydrated">
+                                <div class="d-flex flex-column gap-2">
+                                    @foreach($addresses as $address)
+                                        <div class="kn-address-option-card {{ $selectedAddress && (int) $selectedAddress->id === (int) $address['id'] ? 'is-selected' : '' }}">
+                                            <div class="mlm-checkout-option {{ $selectedAddress && (int) $selectedAddress->id === (int) $address['id'] ? 'is-selected' : '' }}">
+                                                <div class="d-flex align-items-start gap-3">
+                                                    <span class="mlm-checkout-radio-dot mt-1" aria-hidden="true"></span>
+                                                    <div class="flex-grow-1 min-w-0">
+                                                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-1">
+                                                            <div class="d-flex flex-wrap align-items-center gap-2">
+                                                                <span class="fw-bold">{{ $address['label'] }}</span>
+                                                                @if($address['is_primary'])
+                                                                    <span class="badge bg-mlm-secondary text-mlm-primary border border-success-subtle">
+                                                                        Alamat Utama
+                                                                    </span>
+                                                                @endif
+                                                                @if(! $address['has_valid_region'])
+                                                                    <span class="badge text-bg-warning">Perlu Pilih Wilayah</span>
+                                                                @endif
+                                                            </div>
                                                         </div>
+                                                        <div class="small fw-medium text-body">
+                                                            {{ $address['recipient_name'] }} ({{ $address['recipient_phone'] }})
+                                                        </div>
+                                                        <div class="small text-mlm-muted mt-1">{{ $address['address_line'] }}</div>
+                                                        <div class="small text-mlm-muted">{{ $address['formatted_region'] }}</div>
                                                     </div>
-                                                    <div class="small fw-medium text-body">
-                                                        {{ $address['recipient_name'] }} ({{ $address['recipient_phone'] }})
-                                                    </div>
-                                                    <div class="small text-mlm-muted mt-1">{{ $address['address_line'] }}</div>
-                                                    <div class="small text-mlm-muted">{{ $address['formatted_region'] }}</div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                @endforeach
+                                    @endforeach
+                                </div>
                             </div>
                         @endif
 
@@ -1271,7 +1275,7 @@ document.addEventListener('alpine:init', () => {
         customerDefaults: config.customerDefaults || { name: '', phone: '' },
         addresses: Array.isArray(config.addresses) ? config.addresses : [],
         selectedAddressId: config.initialAddressId ? Number(config.initialAddressId) : null,
-        addressListExpanded: (Array.isArray(config.addresses) ? config.addresses.length : 0) <= 1,
+        addressListExpanded: true,
         serverSummary: config.summary || {
             valid_quantity: 0,
             total_weight_grams: 0,
@@ -2082,7 +2086,7 @@ document.addEventListener('alpine:init', () => {
 
                 const savedId = Number(payload?.address?.id || 0);
                 this.addressModalOpen = false;
-                this.addressListExpanded = this.addresses.length <= 1;
+                this.addressListExpanded = true;
 
                 this.showAddressFeedback(
                     payload?.message || (isEdit ? 'Alamat berhasil diperbarui.' : 'Alamat baru berhasil ditambahkan.'),
@@ -2202,7 +2206,7 @@ document.addEventListener('alpine:init', () => {
                     return;
                 }
 
-                this.addressListExpanded = this.addresses.length <= 1;
+                this.addressListExpanded = true;
 
                 if (wasSelected || !this.addresses.some((item) => Number(item.id) === Number(this.selectedAddressId))) {
                     const nextAddress = payload?.promoted_primary_address
