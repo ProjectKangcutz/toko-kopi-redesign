@@ -72,26 +72,26 @@
             {{-- Kolom Kiri: Alamat, Layanan Pengiriman, Daftar Item, Catatan --}}
             <div class="col-12 col-lg-7 col-xl-8 d-flex flex-column gap-4">
                 {{-- Banner Notifikasi Aksi Alamat Inline --}}
-                <div
-                    x-show="addressFeedback"
-                    x-cloak
-                    class="alert mb-0 small"
-                    :class="addressFeedbackType === 'error' ? 'alert-danger' : 'alert-success'"
-                    role="status"
-                    aria-live="polite"
-                >
-                    <div class="d-flex align-items-center justify-content-between gap-2">
-                        <div class="d-flex align-items-center gap-2">
-                            <i
-                                class="bi"
-                                :class="addressFeedbackType === 'error' ? 'bi-exclamation-triangle-fill' : 'bi-check-circle-fill'"
-                                aria-hidden="true"
-                            ></i>
-                            <span x-text="addressFeedback"></span>
+                <template x-if="hasAddressFeedback">
+                    <div
+                        class="alert mb-0 small"
+                        :class="addressFeedbackType === 'error' ? 'alert-danger' : 'alert-success'"
+                        role="status"
+                        aria-live="polite"
+                    >
+                        <div class="d-flex align-items-center justify-content-between gap-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <i
+                                    class="bi flex-shrink-0"
+                                    :class="addressFeedbackType === 'error' ? 'bi-exclamation-triangle-fill' : 'bi-check-circle-fill'"
+                                    aria-hidden="true"
+                                ></i>
+                                <span x-text="addressFeedback"></span>
+                            </div>
+                            <button type="button" class="btn-close btn-sm" aria-label="Tutup pemberitahuan" @click="clearAddressFeedback()"></button>
                         </div>
-                        <button type="button" class="btn-close btn-sm" aria-label="Tutup pemberitahuan" @click="addressFeedback = ''"></button>
                     </div>
-                </div>
+                </template>
 
                 {{-- 1. Pemilihan & Pengelolaan Alamat Pengiriman --}}
                 <section class="mlm-card p-3 p-md-4" aria-labelledby="checkout-address-heading">
@@ -828,36 +828,40 @@
                         ></button>
                     </div>
 
-                    <form @submit.prevent="submitAddressModal()" class="d-flex flex-column min-h-0 flex-grow-1">
-                        <div class="kn-modal-body d-flex flex-column gap-3">
-                            <div x-show="addressModalError" x-cloak class="alert alert-danger small mb-0" role="alert">
-                                <i class="bi bi-exclamation-octagon-fill me-1" aria-hidden="true"></i>
-                                <span x-text="addressModalError"></span>
-                            </div>
+                    <form @submit.prevent="submitAddressModal()" novalidate class="kn-modal-form">
+                        <div x-ref="addressModalBody" class="kn-modal-body d-flex flex-column gap-3">
+                            <template x-if="Boolean(addressModalError && String(addressModalError).trim())">
+                                <div class="alert alert-danger small mb-0" role="alert">
+                                    <i class="bi bi-exclamation-octagon-fill me-1" aria-hidden="true"></i>
+                                    <span x-text="addressModalError"></span>
+                                </div>
+                            </template>
 
                             {{-- Label Alamat --}}
                             <div>
-                                <label for="modal-address-label" class="form-label small fw-semibold mb-1">
-                                    Label Alamat <span class="text-danger">*</span>
-                                </label>
-                                <div class="d-flex flex-wrap gap-2 mb-2">
-                                    <template x-for="preset in ['Rumah', 'Kantor', 'Apartemen', 'Kos']" :key="preset">
+                                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                                    <label for="modal-address-label" class="form-label small fw-semibold mb-0">
+                                        Label Alamat <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="d-flex flex-wrap gap-1">
+                                        <template x-for="preset in ['Rumah', 'Kantor', 'Apartemen', 'Kos']" :key="preset">
+                                            <button
+                                                type="button"
+                                                class="kn-label-chip"
+                                                :class="{ 'is-active': addressForm.label === preset }"
+                                                @click="selectPresetLabel(preset)"
+                                                x-text="preset"
+                                            ></button>
+                                        </template>
                                         <button
                                             type="button"
                                             class="kn-label-chip"
-                                            :class="{ 'is-active': addressForm.label === preset }"
-                                            @click="addressForm.label = preset"
-                                            x-text="preset"
-                                        ></button>
-                                    </template>
-                                    <button
-                                        type="button"
-                                        class="kn-label-chip"
-                                        :class="{ 'is-active': addressForm.label && !['Rumah', 'Kantor', 'Apartemen', 'Kos'].includes(addressForm.label) }"
-                                        @click="focusCustomLabel()"
-                                    >
-                                        Lainnya
-                                    </button>
+                                            :class="{ 'is-active': addressForm.label && !['Rumah', 'Kantor', 'Apartemen', 'Kos'].includes(addressForm.label) }"
+                                            @click="focusCustomLabel()"
+                                        >
+                                            Lainnya
+                                        </button>
+                                    </div>
                                 </div>
                                 <input
                                     id="modal-address-label"
@@ -865,16 +869,16 @@
                                     type="text"
                                     maxlength="60"
                                     x-model="addressForm.label"
-                                    class="form-control"
+                                    @input="clearAddressFieldError('label')"
+                                    class="form-control form-control-sm"
                                     :class="{ 'is-invalid': addressFieldError('label') }"
                                     placeholder="Contoh: Rumah, Kantor, Gudang"
-                                    required
                                 >
                                 <div class="invalid-feedback" x-text="addressFieldError('label')"></div>
                             </div>
 
                             {{-- Nama Penerima & Telepon --}}
-                            <div class="row g-3">
+                            <div class="row g-2 g-sm-3">
                                 <div class="col-12 col-sm-6">
                                     <label for="modal-recipient-name" class="form-label small fw-semibold mb-1">
                                         Nama Penerima <span class="text-danger">*</span>
@@ -884,28 +888,34 @@
                                         type="text"
                                         maxlength="255"
                                         x-model="addressForm.recipient_name"
-                                        class="form-control"
+                                        @input="clearAddressFieldError('recipient_name')"
+                                        class="form-control form-control-sm"
                                         :class="{ 'is-invalid': addressFieldError('recipient_name') }"
                                         placeholder="Nama lengkap penerima paket"
-                                        required
+                                        autocomplete="name"
                                     >
                                     <div class="invalid-feedback" x-text="addressFieldError('recipient_name')"></div>
                                 </div>
 
                                 <div class="col-12 col-sm-6">
                                     <label for="modal-recipient-phone" class="form-label small fw-semibold mb-1">
-                                        Nomor Telepon Penerima <span class="text-danger">*</span>
+                                        Nomor Telepon / WhatsApp <span class="text-danger">*</span>
                                     </label>
                                     <input
                                         id="modal-recipient-phone"
                                         type="tel"
+                                        inputmode="tel"
                                         x-model="addressForm.recipient_phone"
-                                        class="form-control kn-tabular"
+                                        @input="clearAddressFieldError('recipient_phone')"
+                                        class="form-control form-control-sm kn-tabular"
                                         :class="{ 'is-invalid': addressFieldError('recipient_phone') }"
-                                        placeholder="Contoh: 081234567890"
-                                        required
+                                        placeholder="081234567890"
+                                        autocomplete="tel"
                                     >
                                     <div class="invalid-feedback" x-text="addressFieldError('recipient_phone')"></div>
+                                    <div class="form-text mt-1" style="font-size: 0.74rem;" x-show="!addressFieldError('recipient_phone')">
+                                        Gunakan nomor aktif Indonesia (awalan 08 atau +62).
+                                    </div>
                                 </div>
                             </div>
 
@@ -916,8 +926,8 @@
                                         <div class="fw-bold small" style="color: var(--kn-espresso);">
                                             Wilayah Pengiriman <span class="text-danger">*</span>
                                         </div>
-                                        <div class="text-mlm-muted" style="font-size: 0.78rem;">
-                                            Pilih Provinsi hingga Kelurahan/Desa atau cari cepat agar ongkos kirim RajaOngkir terhitung akurat.
+                                        <div class="text-mlm-muted" style="font-size: 0.76rem;">
+                                            Pilih bertahap atau cari cepat kecamatan/kelurahan/kode pos agar ongkos kirim otomatis akurat.
                                         </div>
                                     </div>
                                     <div class="btn-group btn-group-sm" role="group" aria-label="Metode pilih wilayah">
@@ -940,59 +950,74 @@
                                     </div>
                                 </div>
 
-                                <div
-                                    x-show="addressFieldError('province_id') || addressFieldError('city_id') || addressFieldError('subdistrict_id')"
-                                    x-cloak
-                                    class="alert alert-danger py-2 px-3 small mb-2"
-                                >
-                                    <span x-text="addressFieldError('subdistrict_id') || addressFieldError('city_id') || addressFieldError('province_id')"></span>
-                                </div>
+                                <template x-if="Boolean(addressFieldError('province_id') || addressFieldError('city_id') || addressFieldError('subdistrict_id'))">
+                                    <div class="alert alert-danger py-2 px-3 small mb-2">
+                                        <span x-text="addressFieldError('subdistrict_id') || addressFieldError('city_id') || addressFieldError('province_id')"></span>
+                                    </div>
+                                </template>
 
                                 {{-- Mode Dropdown Bertahap --}}
                                 <div x-show="regionInputMode === 'cascade'" class="row g-2 mb-2">
-                                    <div class="col-12" x-show="cascadeError" x-cloak>
-                                        <div class="alert alert-warning py-2 px-3 small mb-1 d-flex flex-wrap justify-content-between align-items-center gap-2">
-                                            <span x-text="cascadeError"></span>
-                                            <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" @click="switchRegionMode('search')">
-                                                Gunakan Cari Cepat
-                                            </button>
+                                    <template x-if="Boolean(cascadeError)">
+                                        <div class="col-12">
+                                            <div class="alert alert-warning py-2 px-3 small mb-1 d-flex flex-wrap justify-content-between align-items-center gap-2">
+                                                <span x-text="cascadeError"></span>
+                                                <div class="d-flex gap-2">
+                                                    <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" @click="switchRegionMode('search')">
+                                                        Cari Cepat
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" @click="switchRegionMode('manual')">
+                                                        Isi Manual
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
+                                    </template>
 
                                     <div class="col-12 col-sm-6">
-                                        <label for="modal-province-select" class="form-label small fw-medium mb-1">Provinsi</label>
+                                        <label for="modal-province-select" class="form-label small fw-medium mb-1">1. Provinsi</label>
                                         <select
                                             id="modal-province-select"
                                             class="form-select form-select-sm"
+                                            :class="{ 'is-invalid': addressFieldError('province_id') }"
                                             :disabled="cascadeLoading.provinces || provincesList.length === 0"
                                             :value="addressForm.province_id"
                                             @change="onProvinceSelectChange($event.target.value)"
                                         >
                                             <option value="" x-text="cascadeLoading.provinces ? 'Memuat provinsi...' : '-- Pilih Provinsi --'"></option>
                                             <template x-for="prov in provincesList" :key="prov.id">
-                                                <option :value="prov.id" x-text="prov.name"></option>
+                                                <option
+                                                    :value="prov.id"
+                                                    :selected="String(addressForm.province_id) === String(prov.id)"
+                                                    x-text="prov.name"
+                                                ></option>
                                             </template>
                                         </select>
                                     </div>
 
                                     <div class="col-12 col-sm-6">
-                                        <label for="modal-city-select" class="form-label small fw-medium mb-1">Kota / Kabupaten</label>
+                                        <label for="modal-city-select" class="form-label small fw-medium mb-1">2. Kota / Kabupaten</label>
                                         <select
                                             id="modal-city-select"
                                             class="form-select form-select-sm"
+                                            :class="{ 'is-invalid': addressFieldError('city_id') }"
                                             :disabled="cascadeLoading.cities || !addressForm.province_id || citiesList.length === 0"
                                             :value="addressForm.city_id"
                                             @change="onCitySelectChange($event.target.value)"
                                         >
-                                            <option value="" x-text="cascadeLoading.cities ? 'Memuat kota/kabupaten...' : '-- Pilih Kota/Kabupaten --'"></option>
+                                            <option value="" x-text="citySelectPlaceholder"></option>
                                             <template x-for="city in citiesList" :key="city.id">
-                                                <option :value="city.id" x-text="city.name"></option>
+                                                <option
+                                                    :value="city.id"
+                                                    :selected="String(addressForm.city_id) === String(city.id)"
+                                                    x-text="city.name"
+                                                ></option>
                                             </template>
                                         </select>
                                     </div>
 
                                     <div class="col-12 col-sm-6">
-                                        <label for="modal-district-select" class="form-label small fw-medium mb-1">Kecamatan</label>
+                                        <label for="modal-district-select" class="form-label small fw-medium mb-1">3. Kecamatan</label>
                                         <select
                                             id="modal-district-select"
                                             class="form-select form-select-sm"
@@ -1000,25 +1025,34 @@
                                             :value="addressForm.district_id || ''"
                                             @change="onDistrictSelectChange($event.target.value)"
                                         >
-                                            <option value="" x-text="cascadeLoading.districts ? 'Memuat kecamatan...' : '-- Pilih Kecamatan --'"></option>
+                                            <option value="" x-text="districtSelectPlaceholder"></option>
                                             <template x-for="dist in districtsList" :key="dist.id">
-                                                <option :value="dist.id" x-text="dist.name"></option>
+                                                <option
+                                                    :value="dist.id"
+                                                    :selected="String(addressForm.district_id) === String(dist.id)"
+                                                    x-text="dist.name"
+                                                ></option>
                                             </template>
                                         </select>
                                     </div>
 
                                     <div class="col-12 col-sm-6">
-                                        <label for="modal-subdistrict-select" class="form-label small fw-medium mb-1">Kelurahan / Desa</label>
+                                        <label for="modal-subdistrict-select" class="form-label small fw-medium mb-1">4. Kelurahan / Desa</label>
                                         <select
                                             id="modal-subdistrict-select"
                                             class="form-select form-select-sm"
+                                            :class="{ 'is-invalid': addressFieldError('subdistrict_id') }"
                                             :disabled="cascadeLoading.subdistricts || !addressForm.district_id || subdistrictsList.length === 0"
                                             :value="addressForm.subdistrict_id || ''"
                                             @change="onSubdistrictSelectChange($event.target.value)"
                                         >
-                                            <option value="" x-text="cascadeLoading.subdistricts ? 'Memuat kelurahan...' : '-- Pilih Kelurahan/Desa --'"></option>
+                                            <option value="" x-text="subdistrictSelectPlaceholder"></option>
                                             <template x-for="sub in subdistrictsList" :key="sub.id">
-                                                <option :value="sub.id" x-text="sub.name"></option>
+                                                <option
+                                                    :value="sub.id"
+                                                    :selected="String(addressForm.subdistrict_id) === String(sub.id)"
+                                                    x-text="sub.name"
+                                                ></option>
                                             </template>
                                         </select>
                                     </div>
@@ -1027,16 +1061,18 @@
                                 {{-- Mode Cari Cepat Wilayah --}}
                                 <div x-show="regionInputMode === 'search'" x-cloak class="mb-2">
                                     <label for="modal-region-keyword" class="form-label small fw-medium mb-1">
-                                        Cari Kelurahan, Kecamatan, Kota, atau Kode Pos
+                                        Ketik Kelurahan, Kecamatan, Kota, atau Kode Pos
                                     </label>
                                     <div class="d-flex gap-2">
                                         <input
                                             id="modal-region-keyword"
+                                            x-ref="modalRegionKeyword"
                                             type="search"
                                             class="form-control form-control-sm"
                                             x-model="regionKeyword"
+                                            @input="scheduleModalRegionSearch()"
                                             @keydown.enter.prevent="searchRegionsInModal()"
-                                            placeholder="Contoh: Sumur Bandung atau 40111"
+                                            placeholder="Contoh: Kadugede, Sumur Bandung, atau 40111"
                                             autocomplete="off"
                                         >
                                         <button
@@ -1049,11 +1085,22 @@
                                             <span x-show="regionSearching" x-cloak class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                                         </button>
                                     </div>
+                                    <div class="form-text mt-1" style="font-size: 0.74rem;">
+                                        Hasil muncul otomatis setelah mengetik minimal 3 karakter, atau klik hasil untuk mengisi wilayah.
+                                    </div>
 
-                                    <div x-show="regionSearchError" x-cloak class="alert alert-warning py-2 px-3 small mt-2 mb-0" x-text="regionSearchError"></div>
+                                    <template x-if="Boolean(regionSearchError)">
+                                        <div class="alert alert-warning py-2 px-3 small mt-2 mb-0 d-flex flex-wrap justify-content-between align-items-center gap-2">
+                                            <span x-text="regionSearchError"></span>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" @click="switchRegionMode('manual')">
+                                                Isi Manual
+                                            </button>
+                                        </div>
+                                    </template>
 
                                     <div x-show="regionSearchDone && !regionSearching && !regionSearchError && regionSearchResults.length === 0" x-cloak class="small text-mlm-muted mt-2">
-                                        Wilayah tidak ditemukan. Coba kata kunci kecamatan atau kode pos lain.
+                                        Wilayah tidak ditemukan. Coba kata kunci kecamatan/kode pos lain atau pilih mode
+                                        <button type="button" class="btn btn-link btn-sm p-0 align-baseline" @click="switchRegionMode('manual')">isi manual</button>.
                                     </div>
 
                                     <div x-show="regionSearchResults.length > 0" x-cloak class="mlm-region-results mt-2" role="listbox" aria-label="Hasil pencarian wilayah">
@@ -1073,27 +1120,109 @@
                                     </div>
                                 </div>
 
+                                {{-- Mode Fallback Manual (hanya bila pencarian wilayah terkendala / dipilih pengguna) --}}
+                                <div x-show="regionInputMode === 'manual'" x-cloak class="row g-2 mb-2">
+                                    <div class="col-12">
+                                        <div class="alert alert-info py-2 px-3 small mb-1">
+                                            Mode manual berguna saat layanan wilayah sedang sibuk. Untuk perhitungan ongkos kirim otomatis, sebaiknya pilih dari daftar resmi.
+                                        </div>
+                                    </div>
+                                    <div class="col-12 col-sm-6">
+                                        <label for="modal-manual-province" class="form-label small fw-medium mb-1">Provinsi *</label>
+                                        <input
+                                            id="modal-manual-province"
+                                            type="text"
+                                            maxlength="100"
+                                            class="form-control form-control-sm"
+                                            :class="{ 'is-invalid': addressFieldError('province_name') }"
+                                            x-model="addressForm.province_name"
+                                            @input="onManualRegionInput('province_name')"
+                                            placeholder="Contoh: Jawa Barat"
+                                        >
+                                    </div>
+                                    <div class="col-12 col-sm-6">
+                                        <label for="modal-manual-city" class="form-label small fw-medium mb-1">Kota / Kabupaten *</label>
+                                        <input
+                                            id="modal-manual-city"
+                                            type="text"
+                                            maxlength="120"
+                                            class="form-control form-control-sm"
+                                            :class="{ 'is-invalid': addressFieldError('city_name') }"
+                                            x-model="addressForm.city_name"
+                                            @input="onManualRegionInput('city_name')"
+                                            placeholder="Contoh: Kabupaten Kuningan"
+                                        >
+                                    </div>
+                                    <div class="col-12 col-sm-6">
+                                        <label for="modal-manual-district" class="form-label small fw-medium mb-1">Kecamatan</label>
+                                        <input
+                                            id="modal-manual-district"
+                                            type="text"
+                                            maxlength="120"
+                                            class="form-control form-control-sm"
+                                            x-model="addressForm.district_name"
+                                            @input="onManualRegionInput('district_name')"
+                                            placeholder="Contoh: Kadugede"
+                                        >
+                                    </div>
+                                    <div class="col-12 col-sm-6">
+                                        <label for="modal-manual-subdistrict" class="form-label small fw-medium mb-1">Kelurahan / Desa</label>
+                                        <input
+                                            id="modal-manual-subdistrict"
+                                            type="text"
+                                            maxlength="120"
+                                            class="form-control form-control-sm"
+                                            x-model="addressForm.subdistrict_name"
+                                            @input="onManualRegionInput('subdistrict_name')"
+                                            placeholder="Contoh: Windujanten"
+                                        >
+                                    </div>
+                                </div>
+
                                 {{-- Ringkasan Wilayah Terpilih --}}
                                 <div x-show="hasModalSelectedRegion" x-cloak class="mlm-region-summary mt-2 py-2 px-3">
                                     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
-                                        <div class="small">
+                                        <div class="small min-w-0">
                                             <div class="fw-semibold text-mlm-primary">
                                                 <i class="bi bi-check-circle-fill me-1" aria-hidden="true"></i>
                                                 Wilayah Terpilih
                                             </div>
                                             <div class="fw-medium text-body" x-text="modalFormattedRegion"></div>
                                         </div>
-                                        <span
-                                            class="badge bg-white border"
-                                            :class="addressForm.subdistrict_id ? 'text-mlm-primary' : 'text-warning'"
-                                            x-text="addressForm.subdistrict_id ? 'Siap Hitung Ongkir' : 'Pilih s/d Kelurahan'"
-                                        ></span>
+                                        <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                                            <span
+                                                class="badge bg-white border"
+                                                :class="addressForm.subdistrict_id ? 'text-mlm-primary' : 'text-warning'"
+                                                x-text="addressForm.subdistrict_id ? 'Siap Hitung Ongkir' : (addressForm.province_id === 'manual' ? 'Input Manual' : 'Lanjutkan Pilih')"
+                                            ></span>
+                                            <button
+                                                type="button"
+                                                class="btn btn-sm btn-outline-primary py-0 px-2"
+                                                style="min-height: 28px; font-size: 0.74rem;"
+                                                @click="clearModalSelectedRegion()"
+                                            >
+                                                Ubah
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
+
+                                <template x-if="regionInputMode !== 'manual'">
+                                    <div class="d-flex justify-content-end mt-2">
+                                        <button
+                                            type="button"
+                                            class="btn btn-link btn-sm p-0 text-decoration-none text-mlm-muted"
+                                            style="font-size: 0.75rem;"
+                                            @click="switchRegionMode('manual')"
+                                        >
+                                            Wilayah tidak ditemukan? Isi manual
+                                        </button>
+                                    </div>
+                                </template>
                             </div>
 
                             {{-- Kode Pos & Alamat Lengkap --}}
-                            <div class="row g-3">
+                            <div class="row g-2 g-sm-3">
                                 <div class="col-12 col-sm-8">
                                     <label for="modal-address-line" class="form-label small fw-semibold mb-1">
                                         Alamat Lengkap <span class="text-danger">*</span>
@@ -1103,10 +1232,10 @@
                                         rows="2"
                                         maxlength="1750"
                                         x-model="addressForm.address_line"
-                                        class="form-control"
+                                        @input="clearAddressFieldError('address_line')"
+                                        class="form-control form-control-sm"
                                         :class="{ 'is-invalid': addressFieldError('address_line') }"
-                                        placeholder="Nama jalan, nomor rumah, blok, RT/RW"
-                                        required
+                                        placeholder="Nama jalan, nomor rumah, dusun/perumahan, RT/RW"
                                     ></textarea>
                                     <div class="invalid-feedback" x-text="addressFieldError('address_line')"></div>
                                 </div>
@@ -1121,19 +1250,23 @@
                                         inputmode="numeric"
                                         maxlength="5"
                                         x-model="addressForm.postal_code"
-                                        class="form-control kn-tabular"
+                                        @input="onPostalCodeInput($event.target.value)"
+                                        class="form-control form-control-sm kn-tabular"
                                         :class="{ 'is-invalid': addressFieldError('postal_code') }"
                                         placeholder="40111"
-                                        required
+                                        autocomplete="postal-code"
                                     >
                                     <div class="invalid-feedback" x-text="addressFieldError('postal_code')"></div>
+                                    <div class="form-text mt-1" style="font-size: 0.72rem;" x-show="!addressFieldError('postal_code')">
+                                        5 digit angka, terisi otomatis jika tersedia.
+                                    </div>
                                 </div>
                             </div>
 
                             {{-- Catatan Kurir (Opsional) --}}
                             <div>
                                 <label for="modal-courier-note" class="form-label small fw-semibold mb-1">
-                                    Catatan Kurir / Patokan Lokasi (Opsional)
+                                    Patokan Lokasi / Catatan Kurir (Opsional)
                                 </label>
                                 <input
                                     id="modal-courier-note"
@@ -1146,16 +1279,22 @@
                             </div>
 
                             {{-- Jadikan Alamat Utama --}}
-                            <div class="form-check">
-                                <input
-                                    id="modal-is-primary"
-                                    type="checkbox"
-                                    class="form-check-input"
-                                    x-model="addressForm.is_primary"
-                                >
-                                <label for="modal-is-primary" class="form-check-label small fw-medium">
-                                    Jadikan sebagai alamat pengiriman utama
-                                </label>
+                            <div>
+                                <div class="form-check">
+                                    <input
+                                        id="modal-is-primary"
+                                        type="checkbox"
+                                        class="form-check-input"
+                                        x-model="addressForm.is_primary"
+                                        :disabled="addressModalMode === 'create' && addresses.length === 0"
+                                    >
+                                    <label for="modal-is-primary" class="form-check-label small fw-medium">
+                                        Jadikan sebagai alamat pengiriman utama
+                                    </label>
+                                </div>
+                                <div class="form-text mt-1" style="font-size: 0.74rem;" x-show="addressModalMode === 'create' && addresses.length === 0">
+                                    Alamat pertama Anda otomatis ditetapkan sebagai alamat utama.
+                                </div>
                             </div>
                         </div>
 
@@ -1344,10 +1483,15 @@ document.addEventListener('alpine:init', () => {
         regionSearchDone: false,
         regionSearchError: '',
         regionSearchResults: [],
+        regionSearchTimer: null,
+        regionSearchAbortController: null,
 
         init() {
             this.hydrated = true;
             this.idempotencyKey = this.generateIdempotencyKey();
+
+            this.$watch('addressModalOpen', () => this.syncModalBodyScrollLock());
+            this.$watch('deleteConfirmAddress', () => this.syncModalBodyScrollLock());
 
             if (this.canCheckout && this.addresses.length > 0 && this.selectedAddressId && this.quoteUrl) {
                 const current = this.selectedAddress;
@@ -1355,6 +1499,54 @@ document.addEventListener('alpine:init', () => {
                     this.fetchShippingQuote(true);
                 }
             }
+        },
+
+        syncModalBodyScrollLock() {
+            const isOpen = Boolean(this.addressModalOpen || this.deleteConfirmAddress !== null);
+            document.body.classList.toggle('overflow-hidden', isOpen);
+        },
+
+        get hasAddressFeedback() {
+            return Boolean(this.addressFeedback && String(this.addressFeedback).trim() !== '');
+        },
+
+        get citySelectPlaceholder() {
+            if (this.cascadeLoading.cities) {
+                return 'Memuat kota/kabupaten...';
+            }
+            if (!this.addressForm.province_id) {
+                return '-- Pilih Provinsi dahulu --';
+            }
+            if (this.citiesList.length === 0) {
+                return '-- Tidak ada kota, gunakan Cari Cepat --';
+            }
+            return '-- Pilih Kota / Kabupaten --';
+        },
+
+        get districtSelectPlaceholder() {
+            if (this.cascadeLoading.districts) {
+                return 'Memuat kecamatan...';
+            }
+            if (!this.addressForm.city_id) {
+                return '-- Pilih Kota/Kabupaten dahulu --';
+            }
+            if (this.districtsList.length === 0) {
+                return '-- Tidak ada kecamatan, gunakan Cari Cepat --';
+            }
+            return '-- Pilih Kecamatan --';
+        },
+
+        get subdistrictSelectPlaceholder() {
+            if (this.cascadeLoading.subdistricts) {
+                return 'Memuat kelurahan/desa...';
+            }
+            if (!this.addressForm.district_id) {
+                return '-- Pilih Kecamatan dahulu --';
+            }
+            if (this.subdistrictsList.length === 0) {
+                return '-- Data kelurahan tidak tersedia --';
+            }
+            return '-- Pilih Kelurahan / Desa --';
         },
 
         get selectedAddress() {
@@ -1644,13 +1836,38 @@ document.addEventListener('alpine:init', () => {
         },
 
         showAddressFeedback(message, type = 'success') {
-            this.addressFeedback = message;
-            this.addressFeedbackType = type;
+            const cleanMessage = String(message || '').trim();
+            if (!cleanMessage) {
+                this.addressFeedback = '';
+                return;
+            }
+            this.addressFeedback = cleanMessage;
+            this.addressFeedbackType = type === 'error' ? 'error' : 'success';
+        },
+
+        clearAddressFeedback() {
+            this.addressFeedback = '';
         },
 
         addressFieldError(field) {
             const errors = this.addressFormErrors?.[field];
             return Array.isArray(errors) && errors.length > 0 ? errors[0] : '';
+        },
+
+        clearAddressFieldError(field) {
+            if (this.addressFormErrors && this.addressFormErrors[field]) {
+                const next = { ...this.addressFormErrors };
+                delete next[field];
+                this.addressFormErrors = next;
+            }
+        },
+
+        scrollAddressModalToTop() {
+            this.$nextTick(() => {
+                if (this.$refs.addressModalBody) {
+                    this.$refs.addressModalBody.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            });
         },
 
         splitAddressAndCourierNote(rawAddressLine) {
@@ -1674,21 +1891,73 @@ document.addEventListener('alpine:init', () => {
             return cleanAddress + '\n[Catatan Kurir: ' + cleanNote + ']';
         },
 
+        selectPresetLabel(preset) {
+            this.addressForm.label = preset;
+            this.clearAddressFieldError('label');
+        },
+
         focusCustomLabel() {
             if (['Rumah', 'Kantor', 'Apartemen', 'Kos'].includes(this.addressForm.label)) {
                 this.addressForm.label = '';
             }
+            this.clearAddressFieldError('label');
             this.$nextTick(() => {
                 this.$refs.modalLabelInput?.focus();
             });
         },
 
+        onPostalCodeInput(value) {
+            this.addressForm.postal_code = String(value || '').replace(/\D+/g, '').slice(0, 5);
+            this.clearAddressFieldError('postal_code');
+        },
+
+        onManualRegionInput(field) {
+            this.addressForm.province_id = 'manual';
+            this.addressForm.city_id = 'manual';
+            this.addressForm.district_id = '';
+            this.addressForm.subdistrict_id = '';
+            this.clearAddressFieldError(field);
+            this.clearAddressFieldError('province_id');
+            this.clearAddressFieldError('city_id');
+            this.clearAddressFieldError('subdistrict_id');
+        },
+
+        clearModalSelectedRegion() {
+            this.addressForm.province_id = '';
+            this.addressForm.province_name = '';
+            this.addressForm.city_id = '';
+            this.addressForm.city_name = '';
+            this.addressForm.district_id = '';
+            this.addressForm.district_name = '';
+            this.addressForm.subdistrict_id = '';
+            this.addressForm.subdistrict_name = '';
+            this.citiesList = [];
+            this.districtsList = [];
+            this.subdistrictsList = [];
+            this.clearAddressFieldError('province_id');
+            this.clearAddressFieldError('city_id');
+            this.clearAddressFieldError('subdistrict_id');
+
+            if (this.regionInputMode === 'search') {
+                this.$nextTick(() => this.$refs.modalRegionKeyword?.focus());
+            }
+        },
+
         resetRegionLists() {
+            if (this.regionSearchTimer) {
+                clearTimeout(this.regionSearchTimer);
+                this.regionSearchTimer = null;
+            }
+            if (this.regionSearchAbortController) {
+                this.regionSearchAbortController.abort();
+                this.regionSearchAbortController = null;
+            }
             this.citiesList = [];
             this.districtsList = [];
             this.subdistrictsList = [];
             this.cascadeError = '';
             this.regionKeyword = '';
+            this.regionSearching = false;
             this.regionSearchDone = false;
             this.regionSearchError = '';
             this.regionSearchResults = [];
@@ -1722,7 +1991,12 @@ document.addEventListener('alpine:init', () => {
                 is_primary: this.addresses.length === 0,
             };
             this.addressModalOpen = true;
-            this.loadProvinces();
+            this.$nextTick(() => {
+                if (this.$refs.addressModalBody) {
+                    this.$refs.addressModalBody.scrollTop = 0;
+                }
+            });
+            this.loadProvinces(true);
         },
 
         openEditAddressModal(address) {
@@ -1730,12 +2004,13 @@ document.addEventListener('alpine:init', () => {
                 return;
             }
             const parsed = this.splitAddressAndCourierNote(address.address_line);
+            const isManual = String(address.province_id || '') === 'manual' || String(address.city_id || '') === 'manual';
             this.addressModalMode = 'edit';
             this.editingAddress = address;
             this.addressModalError = '';
             this.addressFormErrors = {};
             this.resetRegionLists();
-            this.regionInputMode = 'cascade';
+            this.regionInputMode = isManual ? 'manual' : 'cascade';
             this.addressForm = {
                 label: String(address.label || ''),
                 recipient_name: String(address.recipient_name || ''),
@@ -1754,12 +2029,27 @@ document.addEventListener('alpine:init', () => {
                 is_primary: Boolean(address.is_primary),
             };
             this.addressModalOpen = true;
-            this.hydrateCascadeListsForEdit();
+            this.$nextTick(() => {
+                if (this.$refs.addressModalBody) {
+                    this.$refs.addressModalBody.scrollTop = 0;
+                }
+            });
+            if (!isManual) {
+                this.hydrateCascadeListsForEdit();
+            }
         },
 
         closeAddressModal() {
             if (this.savingAddress) {
                 return;
+            }
+            if (this.regionSearchTimer) {
+                clearTimeout(this.regionSearchTimer);
+                this.regionSearchTimer = null;
+            }
+            if (this.regionSearchAbortController) {
+                this.regionSearchAbortController.abort();
+                this.regionSearchAbortController = null;
             }
             this.addressModalOpen = false;
         },
@@ -1767,7 +2057,12 @@ document.addEventListener('alpine:init', () => {
         switchRegionMode(mode) {
             this.regionInputMode = mode;
             if (mode === 'cascade' && this.provincesList.length === 0 && !this.cascadeLoading.provinces) {
-                this.loadProvinces();
+                this.loadProvinces(false);
+            }
+            if (mode === 'search') {
+                this.$nextTick(() => {
+                    this.$refs.modalRegionKeyword?.focus();
+                });
             }
         },
 
@@ -1775,7 +2070,7 @@ document.addEventListener('alpine:init', () => {
             return String(template || '').replace('__ID__', encodeURIComponent(String(id || '')));
         },
 
-        async fetchRegionJson(url) {
+        async fetchRegionJson(url, signal = undefined) {
             const response = await fetch(url, {
                 method: 'GET',
                 credentials: 'same-origin',
@@ -1783,12 +2078,13 @@ document.addEventListener('alpine:init', () => {
                     'Accept': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
                 },
+                signal,
             });
             const payload = await response.json().catch(() => null);
             return { response, payload };
         },
 
-        async loadProvinces() {
+        async loadProvinces(autoSwitchSearchOnError = false) {
             const url = this.addressEndpoints?.regionProvincesUrl;
             if (!url) {
                 return false;
@@ -1802,12 +2098,21 @@ document.addEventListener('alpine:init', () => {
                 const { response, payload } = await this.fetchRegionJson(url);
                 if (!response.ok || !payload || payload.success !== true) {
                     this.cascadeError = payload?.message || 'Daftar provinsi tidak tersedia, silakan gunakan tab Cari Cepat.';
+                    if (autoSwitchSearchOnError) {
+                        this.regionInputMode = 'search';
+                    }
                     return false;
                 }
                 this.provincesList = Array.isArray(payload.data) ? payload.data : [];
+                if (this.provincesList.length === 0 && autoSwitchSearchOnError) {
+                    this.regionInputMode = 'search';
+                }
                 return true;
             } catch (e) {
                 this.cascadeError = 'Gagal memuat daftar provinsi. Silakan gunakan tab Cari Cepat.';
+                if (autoSwitchSearchOnError) {
+                    this.regionInputMode = 'search';
+                }
                 return false;
             } finally {
                 this.cascadeLoading.provinces = false;
@@ -1887,20 +2192,22 @@ document.addEventListener('alpine:init', () => {
         },
 
         async hydrateCascadeListsForEdit() {
-            const loadedProvinces = await this.loadProvinces();
+            const loadedProvinces = await this.loadProvinces(false);
             if (!loadedProvinces) {
                 return;
             }
             const hasProvince = this.provincesList.some((p) => String(p.id) === String(this.addressForm.province_id));
-            if (hasProvince) {
-                await this.loadCities(this.addressForm.province_id);
-                const hasCity = this.citiesList.some((c) => String(c.id) === String(this.addressForm.city_id));
-                if (hasCity) {
-                    await this.loadDistricts(this.addressForm.city_id);
-                    const hasDistrict = this.districtsList.some((d) => String(d.id) === String(this.addressForm.district_id));
-                    if (hasDistrict) {
-                        await this.loadSubdistricts(this.addressForm.district_id);
-                    }
+            if (!hasProvince) {
+                // Alamat sebelumnya tersimpan via Cari Cepat (ID gabungan) atau wilayah lama -> tetap tampilkan ringkasan Wilayah Terpilih.
+                return;
+            }
+            await this.loadCities(this.addressForm.province_id);
+            const hasCity = this.citiesList.some((c) => String(c.id) === String(this.addressForm.city_id));
+            if (hasCity) {
+                await this.loadDistricts(this.addressForm.city_id);
+                const hasDistrict = this.districtsList.some((d) => String(d.id) === String(this.addressForm.district_id));
+                if (hasDistrict) {
+                    await this.loadSubdistricts(this.addressForm.district_id);
                 }
             }
         },
@@ -1918,6 +2225,9 @@ document.addEventListener('alpine:init', () => {
             this.citiesList = [];
             this.districtsList = [];
             this.subdistrictsList = [];
+            this.clearAddressFieldError('province_id');
+            this.clearAddressFieldError('city_id');
+            this.clearAddressFieldError('subdistrict_id');
 
             if (this.addressForm.province_id) {
                 await this.loadCities(this.addressForm.province_id);
@@ -1934,6 +2244,8 @@ document.addEventListener('alpine:init', () => {
             this.addressForm.subdistrict_name = '';
             this.districtsList = [];
             this.subdistrictsList = [];
+            this.clearAddressFieldError('city_id');
+            this.clearAddressFieldError('subdistrict_id');
 
             if (this.addressForm.city_id) {
                 await this.loadDistricts(this.addressForm.city_id);
@@ -1947,6 +2259,7 @@ document.addEventListener('alpine:init', () => {
             this.addressForm.subdistrict_id = '';
             this.addressForm.subdistrict_name = '';
             this.subdistrictsList = [];
+            this.clearAddressFieldError('subdistrict_id');
 
             if (this.addressForm.district_id) {
                 await this.loadSubdistricts(this.addressForm.district_id);
@@ -1957,9 +2270,32 @@ document.addEventListener('alpine:init', () => {
             const selected = this.subdistrictsList.find((item) => String(item.id) === String(subdistrictId));
             this.addressForm.subdistrict_id = selected ? String(selected.id) : '';
             this.addressForm.subdistrict_name = selected ? String(selected.name) : '';
+            this.clearAddressFieldError('subdistrict_id');
             if (selected && selected.zip_code) {
-                this.addressForm.postal_code = String(selected.zip_code).replace(/\D+/g, '').slice(0, 5);
+                const digits = String(selected.zip_code).replace(/\D+/g, '').slice(0, 5);
+                if (digits.length === 5) {
+                    this.addressForm.postal_code = digits;
+                    this.clearAddressFieldError('postal_code');
+                }
             }
+        },
+
+        scheduleModalRegionSearch() {
+            if (this.regionSearchTimer) {
+                clearTimeout(this.regionSearchTimer);
+            }
+            const keyword = String(this.regionKeyword || '').trim();
+            if (keyword.length < 3) {
+                this.regionSearchError = '';
+                if (keyword.length === 0) {
+                    this.regionSearchResults = [];
+                    this.regionSearchDone = false;
+                }
+                return;
+            }
+            this.regionSearchTimer = setTimeout(() => {
+                this.searchRegionsInModal();
+            }, 350);
         },
 
         async searchRegionsInModal() {
@@ -1976,13 +2312,18 @@ document.addEventListener('alpine:init', () => {
                 return;
             }
 
+            if (this.regionSearchAbortController) {
+                this.regionSearchAbortController.abort();
+            }
+            this.regionSearchAbortController = new AbortController();
+
             this.regionSearching = true;
             this.regionSearchError = '';
             this.regionSearchDone = false;
 
             try {
                 const url = `${baseSearchUrl}?keyword=${encodeURIComponent(keyword)}&limit=15`;
-                const { response, payload } = await this.fetchRegionJson(url);
+                const { response, payload } = await this.fetchRegionJson(url, this.regionSearchAbortController.signal);
                 this.regionSearchDone = true;
 
                 if (!response.ok || !payload || payload.success !== true) {
@@ -1993,6 +2334,9 @@ document.addEventListener('alpine:init', () => {
 
                 this.regionSearchResults = Array.isArray(payload.data) ? payload.data : [];
             } catch (e) {
+                if (e && e.name === 'AbortError') {
+                    return;
+                }
                 this.regionSearchError = 'Gangguan jaringan saat mencari wilayah.';
                 this.regionSearchResults = [];
             } finally {
@@ -2014,9 +2358,83 @@ document.addEventListener('alpine:init', () => {
             this.addressForm.subdistrict_id = destId;
             this.addressForm.subdistrict_name = String(item.subdistrict_name || '');
             if (item.zip_code) {
-                this.addressForm.postal_code = String(item.zip_code).replace(/\D+/g, '').slice(0, 5);
+                const digits = String(item.zip_code).replace(/\D+/g, '').slice(0, 5);
+                if (digits.length === 5) {
+                    this.addressForm.postal_code = digits;
+                    this.clearAddressFieldError('postal_code');
+                }
             }
+            this.clearAddressFieldError('province_id');
+            this.clearAddressFieldError('city_id');
+            this.clearAddressFieldError('subdistrict_id');
             this.regionSearchResults = [];
+            this.regionSearchDone = false;
+            this.regionSearchError = '';
+        },
+
+        normalizePhoneValue(raw) {
+            let cleaned = String(raw || '').trim().replace(/[\s\-\(\)\.]+/g, '');
+            if (cleaned.startsWith('+')) {
+                cleaned = cleaned.slice(1);
+            }
+            return cleaned;
+        },
+
+        validateAddressForm() {
+            const errors = {};
+            const label = String(this.addressForm.label || '').trim();
+            const recipientName = String(this.addressForm.recipient_name || '').trim();
+            const normalizedPhone = this.normalizePhoneValue(this.addressForm.recipient_phone);
+            const addressLine = String(this.addressForm.address_line || '').trim();
+            const postalCode = String(this.addressForm.postal_code || '').trim();
+
+            if (!label) {
+                errors.label = ['Label alamat wajib diisi (misalnya Rumah atau Kantor).'];
+            } else if (label.length > 60) {
+                errors.label = ['Label alamat maksimal 60 karakter.'];
+            }
+
+            if (!recipientName) {
+                errors.recipient_name = ['Nama penerima wajib diisi.'];
+            }
+
+            if (!normalizedPhone) {
+                errors.recipient_phone = ['Nomor telepon penerima wajib diisi.'];
+            } else if (!/^(?:0[0-9]{8,15}|62[0-9]{7,14})$/.test(normalizedPhone)) {
+                errors.recipient_phone = ['Nomor telepon harus berupa nomor Indonesia valid (awalan 0 atau 62, 9–16 digit).'];
+            }
+
+            if (!this.addressForm.province_id || !String(this.addressForm.province_name || '').trim()) {
+                errors.province_id = ['Silakan pilih Provinsi / Wilayah pengiriman terlebih dahulu.'];
+                errors.province_name = errors.province_id;
+            } else if (!this.addressForm.city_id || !String(this.addressForm.city_name || '').trim()) {
+                errors.city_id = ['Silakan pilih Kota / Kabupaten tujuan pengiriman.'];
+                errors.city_name = errors.city_id;
+            } else if (
+                this.regionInputMode === 'cascade'
+                && this.addressForm.province_id !== 'manual'
+                && this.districtsList.length > 0
+                && !this.addressForm.district_id
+            ) {
+                errors.subdistrict_id = ['Silakan lanjutkan memilih Kecamatan dan Kelurahan/Desa agar ongkos kirim dapat dihitung.'];
+            } else if (
+                this.regionInputMode === 'cascade'
+                && this.addressForm.province_id !== 'manual'
+                && this.subdistrictsList.length > 0
+                && !this.addressForm.subdistrict_id
+            ) {
+                errors.subdistrict_id = ['Silakan pilih Kelurahan / Desa agar ongkos kirim dapat dihitung akurat.'];
+            }
+
+            if (!addressLine) {
+                errors.address_line = ['Alamat lengkap wajib diisi.'];
+            }
+
+            if (!/^[0-9]{5}$/.test(postalCode)) {
+                errors.postal_code = ['Kode pos wajib terdiri dari tepat 5 digit angka.'];
+            }
+
+            return errors;
         },
 
         async submitAddressModal() {
@@ -2027,8 +2445,11 @@ document.addEventListener('alpine:init', () => {
             this.addressModalError = '';
             this.addressFormErrors = {};
 
-            if (!this.addressForm.province_id || !this.addressForm.city_id) {
-                this.addressModalError = 'Silakan pilih wilayah pengiriman terlebih dahulu sebelum menyimpan alamat.';
+            const clientErrors = this.validateAddressForm();
+            if (Object.keys(clientErrors).length > 0) {
+                this.addressFormErrors = clientErrors;
+                this.addressModalError = Object.values(clientErrors).flat()[0] || 'Periksa kembali kolom yang wajib diisi.';
+                this.scrollAddressModalToTop();
                 return;
             }
 
@@ -2053,7 +2474,7 @@ document.addEventListener('alpine:init', () => {
                     body: JSON.stringify({
                         label: String(this.addressForm.label || '').trim(),
                         recipient_name: String(this.addressForm.recipient_name || '').trim(),
-                        recipient_phone: String(this.addressForm.recipient_phone || '').trim(),
+                        recipient_phone: this.normalizePhoneValue(this.addressForm.recipient_phone),
                         province_id: String(this.addressForm.province_id || '').trim(),
                         province_name: String(this.addressForm.province_name || '').trim(),
                         city_id: String(this.addressForm.city_id || '').trim(),
@@ -2077,6 +2498,7 @@ document.addEventListener('alpine:init', () => {
                     } else {
                         this.addressModalError = payload?.message || 'Gagal menyimpan alamat pengiriman.';
                     }
+                    this.scrollAddressModalToTop();
                     return;
                 }
 
@@ -2098,6 +2520,7 @@ document.addEventListener('alpine:init', () => {
                 }
             } catch (e) {
                 this.addressModalError = 'Terjadi gangguan jaringan saat menyimpan alamat. Silakan coba lagi.';
+                this.scrollAddressModalToTop();
             } finally {
                 this.savingAddress = false;
             }
