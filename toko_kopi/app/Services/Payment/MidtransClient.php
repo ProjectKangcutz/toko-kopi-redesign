@@ -314,6 +314,27 @@ class MidtransClient
             ]);
         }
 
+        $embeddedStatus = $this->extractEmbeddedCoreApiErrorStatus($decoded);
+        if ($embeddedStatus !== null) {
+            $sanitizedError = $this->extractSanitizedErrorMessageFromArray($decoded, $config['server_key'])
+                ?? ('Midtrans status API mengembalikan status_code '.$embeddedStatus.'.');
+
+            Log::channel('payment')->warning('Midtrans status API embedded error status_code.', [
+                'endpoint' => '/v2/{order_id}/status',
+                'environment' => $config['is_production'] ? 'production' : 'sandbox',
+                'midtrans_order_id' => $normalizedOrderId,
+                'http_status' => $embeddedStatus,
+                'detail' => $sanitizedError,
+            ]);
+
+            throw MidtransPaymentException::upstreamUnavailable([
+                'category' => $this->classifyHttpFailure($embeddedStatus),
+                'http_status' => $embeddedStatus,
+                'endpoint' => '/v2/{order_id}/status',
+                'upstream_message' => $sanitizedError,
+            ]);
+        }
+
         return $decoded;
     }
 
@@ -335,8 +356,13 @@ class MidtransClient
         $endpoint = '/v2/'.rawurlencode($normalizedOrderId).'/cancel';
 
         try {
-            $response = $this->buildPendingRequest($baseUrl, $config['server_key'])
-                ->post($endpoint, []);
+            // Core API /v2/{order_id}/cancel harus dikirim tanpa body JSON array ([]).
+            $response = Http::baseUrl($baseUrl)
+                ->acceptJson()
+                ->withBasicAuth($config['server_key'], '')
+                ->connectTimeout(5)
+                ->timeout(15)
+                ->post($endpoint);
         } catch (ConnectionException $e) {
             $sanitizedError = $this->sanitizeDiagnosticMessage($e->getMessage(), $config['server_key'])
                 ?? 'Koneksi ke Midtrans Core API timeout saat membatalkan transaksi sebelumnya.';
@@ -410,6 +436,27 @@ class MidtransClient
             ]);
         }
 
+        $embeddedStatus = $this->extractEmbeddedCoreApiErrorStatus($decoded);
+        if ($embeddedStatus !== null) {
+            $sanitizedError = $this->extractSanitizedErrorMessageFromArray($decoded, $config['server_key'])
+                ?? ('Midtrans cancel API mengembalikan status_code '.$embeddedStatus.'.');
+
+            Log::channel('payment')->warning('Midtrans cancel API embedded error status_code.', [
+                'endpoint' => '/v2/{order_id}/cancel',
+                'environment' => $config['is_production'] ? 'production' : 'sandbox',
+                'midtrans_order_id' => $normalizedOrderId,
+                'http_status' => $embeddedStatus,
+                'detail' => $sanitizedError,
+            ]);
+
+            throw MidtransPaymentException::upstreamUnavailable([
+                'category' => $this->classifyHttpFailure($embeddedStatus),
+                'http_status' => $embeddedStatus,
+                'endpoint' => '/v2/{order_id}/cancel',
+                'upstream_message' => $sanitizedError,
+            ]);
+        }
+
         return $decoded;
     }
 
@@ -428,11 +475,38 @@ class MidtransClient
         return match (true) {
             in_array($status, [401, 403], true) => 'upstream_auth_error',
             $status === 404 => 'upstream_not_found',
+            $status === 412 => 'upstream_precondition_failed',
             in_array($status, [400, 422], true) => 'upstream_validation_error',
             $status === 429 => 'upstream_rate_limited',
             $status >= 500 => 'upstream_server_error',
             default => 'upstream_http_error',
         };
+    }
+
+    /**
+     * Midtrans Core API terkadang mengembalikan HTTP 200 dengan JSON {"status_code": "404"|"412"}
+     * ketika transaksi tidak ditemukan atau status transaksi tidak dapat diubah.
+     *
+     * @param  array<string, mixed>  $decoded
+     */
+    protected function extractEmbeddedCoreApiErrorStatus(array $decoded): ?int
+    {
+        $txStatus = trim((string) ($decoded['transaction_status'] ?? ''));
+        if ($txStatus !== '') {
+            return null;
+        }
+
+        $rawCode = $decoded['status_code'] ?? null;
+        if (! is_scalar($rawCode)) {
+            return null;
+        }
+
+        $code = (int) trim((string) $rawCode);
+        if ($code >= 400 && $code <= 599) {
+            return $code;
+        }
+
+        return null;
     }
 
     protected function extractSanitizedErrorMessage(Response $response, string $serverKey): ?string
@@ -442,6 +516,15 @@ class MidtransClient
         if (! is_array($payload)) {
             return 'Midtrans mengembalikan respons non-JSON (HTTP '.$response->status().').';
         }
+
+        return $this->extractSanitizedErrorMessageFromArray($payload, $serverKey);
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    protected function extractSanitizedErrorMessageFromArray(array $payload, string $serverKey): ?string
+    {
 
         $candidates = [];
 

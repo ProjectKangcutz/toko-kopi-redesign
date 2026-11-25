@@ -16,6 +16,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class PaymentInitiationService
@@ -818,7 +819,10 @@ class PaymentInitiationService
                 $httpStatus = $cancelException->diagnostics()['http_status'] ?? null;
                 $category = $cancelException->diagnostics()['category'] ?? null;
 
-                if ($category === 'upstream_not_found' || $httpStatus === 412) {
+                $isRecoverableCancelRejection = $category === 'upstream_not_found'
+                    || (is_int($httpStatus) && in_array($httpStatus, [400, 406, 412, 422], true));
+
+                if ($isRecoverableCancelRejection) {
                     $rechecked = $this->fetchTransactionStatusOrNull($midtransOrderId);
                     if ($rechecked === null) {
                         $results[$pendingPayment->id] = [
@@ -836,6 +840,26 @@ class PaymentInitiationService
                     $recheckStatus = strtolower(trim((string) ($rechecked['transaction_status'] ?? '')));
                     if (in_array($recheckStatus, ['deny', 'cancel', 'expire'], true)) {
                         $this->synchronizationService->synchronizeFromCoreApiStatus($pendingPayment, $rechecked);
+                        continue;
+                    }
+
+                    if ($recheckStatus === 'pending') {
+                        Log::channel('payment')->info('Midtrans tidak mengizinkan pembatalan API langsung untuk kanal pending ini; mengganti sesi pembayaran secara aman.', [
+                            'midtrans_order_id' => $midtransOrderId,
+                            'cancel_http_status' => $httpStatus,
+                            'payment_type' => $rechecked['payment_type'] ?? $pendingPayment->payment_type,
+                        ]);
+
+                        $sanitizedRecheck = $rechecked;
+                        unset($sanitizedRecheck['signature_key']);
+
+                        $results[$pendingPayment->id] = [
+                            'reason' => 'superseded_uncancellable_on_midtrans',
+                            'payload' => array_merge($sanitizedRecheck, [
+                                'cancel_http_status' => $httpStatus,
+                                'reason' => 'superseded_uncancellable_on_midtrans',
+                            ]),
+                        ];
                         continue;
                     }
                 }

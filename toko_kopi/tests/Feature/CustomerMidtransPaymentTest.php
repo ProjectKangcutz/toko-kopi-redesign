@@ -791,6 +791,8 @@ class CustomerMidtransPaymentTest extends TestCase
             'expired_at' => now()->addHours(6),
         ]);
 
+        $capturedCancelBody = null;
+
         Http::fake([
             'https://api.sandbox.midtrans.com/v2/'.$p1->midtrans_order_id.'/status' => Http::response([
                 'status_code' => '200',
@@ -800,14 +802,18 @@ class CustomerMidtransPaymentTest extends TestCase
                 'payment_type' => 'qris',
                 'transaction_status' => 'pending',
             ], 200),
-            'https://api.sandbox.midtrans.com/v2/'.$p1->midtrans_order_id.'/cancel' => Http::response([
-                'status_code' => '200',
-                'transaction_id' => 'trx-qris-p1-locked',
-                'order_id' => $p1->midtrans_order_id,
-                'gross_amount' => '175000.00',
-                'payment_type' => 'qris',
-                'transaction_status' => 'cancel',
-            ], 200),
+            'https://api.sandbox.midtrans.com/v2/'.$p1->midtrans_order_id.'/cancel' => function (Request $request) use (&$capturedCancelBody, $p1) {
+                $capturedCancelBody = $request->body();
+
+                return Http::response([
+                    'status_code' => '200',
+                    'transaction_id' => 'trx-qris-p1-locked',
+                    'order_id' => $p1->midtrans_order_id,
+                    'gross_amount' => '175000.00',
+                    'payment_type' => 'qris',
+                    'transaction_status' => 'cancel',
+                ], 200);
+            },
             'https://app.sandbox.midtrans.com/snap/v1/transactions' => Http::response([
                 'token' => 'snap-token-p2-fresh',
                 'redirect_url' => 'https://app.sandbox.midtrans.com/snap/v2/vtweb/snap-token-p2-fresh',
@@ -826,6 +832,7 @@ class CustomerMidtransPaymentTest extends TestCase
             ->assertJsonPath('data.order_status', 'awaiting_payment')
             ->assertJsonPath('data.payment_status', 'unpaid');
 
+        $this->assertSame('', $capturedCancelBody);
         $p2MidtransId = (string) $switchResponse->json('data.midtrans_order_id');
         $this->assertNotSame($p1->midtrans_order_id, $p2MidtransId);
         $this->assertStringStartsWith($order->order_number.'-P2-', $p2MidtransId);
@@ -1035,5 +1042,104 @@ class CustomerMidtransPaymentTest extends TestCase
         $this->assertSame('pending', $p1->fresh()->status);
         $this->assertSame(1, Payment::where('order_id', $order->id)->count());
         Http::assertSentCount(2);
+    }
+
+    public function test_switching_payment_method_handles_http_200_embedded_404_status_response_from_midtrans(): void
+    {
+        $this->configureMidtrans();
+
+        $customer = $this->createCustomer();
+        $order = $this->createOrderForCustomer($customer, [
+            'order_status' => 'awaiting_payment',
+            'payment_status' => 'unpaid',
+        ]);
+
+        $p1 = Payment::create([
+            'order_id' => $order->id,
+            'payment_gateway' => 'midtrans',
+            'midtrans_order_id' => $order->order_number.'-P1-EMB404',
+            'snap_token' => 'snap-token-p1-emb404',
+            'gross_amount' => 175000,
+            'status' => 'pending',
+            'expired_at' => now()->addHours(6),
+        ]);
+
+        Http::fake([
+            'https://api.sandbox.midtrans.com/v2/'.$p1->midtrans_order_id.'/status' => Http::response([
+                'status_code' => '404',
+                'status_message' => "Transaction doesn't exist.",
+            ], 200),
+            'https://app.sandbox.midtrans.com/snap/v1/transactions' => Http::response([
+                'token' => 'snap-token-p2-after-emb404',
+                'redirect_url' => 'https://app.sandbox.midtrans.com/snap/v2/vtweb/snap-token-p2-after-emb404',
+            ], 201),
+        ]);
+
+        $res = $this->actingAs($customer, 'customer')
+            ->postJson(route('customer.orders.payment.initiate', $order), [
+                'force_new' => true,
+            ]);
+
+        $res->assertStatus(201)
+            ->assertJsonPath('data.reused_token', false)
+            ->assertJsonPath('data.snap_token', 'snap-token-p2-after-emb404');
+
+        $this->assertSame('cancel', $p1->fresh()->status);
+        $this->assertSame(2, Payment::where('order_id', $order->id)->count());
+        Http::assertSentCount(2);
+    }
+
+    public function test_switching_payment_method_proceeds_when_midtrans_returns_412_for_uncancellable_pending_qris(): void
+    {
+        $this->configureMidtrans();
+
+        $customer = $this->createCustomer();
+        $order = $this->createOrderForCustomer($customer, [
+            'order_status' => 'awaiting_payment',
+            'payment_status' => 'pending',
+        ]);
+
+        $p1 = Payment::create([
+            'order_id' => $order->id,
+            'payment_gateway' => 'midtrans',
+            'midtrans_order_id' => $order->order_number.'-P1-QRIS412',
+            'snap_token' => 'snap-token-p1-qris412',
+            'gross_amount' => 175000,
+            'status' => 'pending',
+            'expired_at' => now()->addHours(6),
+        ]);
+
+        Http::fake([
+            'https://api.sandbox.midtrans.com/v2/'.$p1->midtrans_order_id.'/status' => Http::response([
+                'status_code' => '200',
+                'transaction_id' => 'trx-qris-uncancellable',
+                'order_id' => $p1->midtrans_order_id,
+                'gross_amount' => '175000.00',
+                'payment_type' => 'qris',
+                'transaction_status' => 'pending',
+            ], 200),
+            'https://api.sandbox.midtrans.com/v2/'.$p1->midtrans_order_id.'/cancel' => Http::response([
+                'status_code' => '412',
+                'status_message' => 'Merchant cannot modify the status of the transaction',
+            ], 412),
+            'https://app.sandbox.midtrans.com/snap/v1/transactions' => Http::response([
+                'token' => 'snap-token-p2-after-412',
+                'redirect_url' => 'https://app.sandbox.midtrans.com/snap/v2/vtweb/snap-token-p2-after-412',
+            ], 201),
+        ]);
+
+        $res = $this->actingAs($customer, 'customer')
+            ->postJson(route('customer.orders.payment.initiate', $order), [
+                'force_new' => true,
+            ]);
+
+        $res->assertStatus(201)
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.reused_token', false)
+            ->assertJsonPath('data.snap_token', 'snap-token-p2-after-412');
+
+        $this->assertSame('cancel', $p1->fresh()->status);
+        $this->assertSame(2, Payment::where('order_id', $order->id)->count());
+        Http::assertSentCount(4);
     }
 }
